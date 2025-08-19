@@ -30,7 +30,7 @@ export interface OpenAIChatCompletionRequest {
 }
 
 export interface OpenAIMessage {
-    role: 'system' | 'user' | 'assistant' | 'function';
+    role: "system" | "user" | "assistant" | "function";
     content: string | OpenAIMessageContent[];
     name?: string;
     function_call?: {
@@ -40,17 +40,17 @@ export interface OpenAIMessage {
 }
 
 export interface OpenAIMessageContent {
-    type: 'text' | 'image_url';
+    type: "text" | "image_url";
     text?: string;
     image_url?: {
         url: string;
-        detail?: 'low' | 'high' | 'auto';
+        detail?: "low" | "high" | "auto";
     };
 }
 
 export interface OpenAIChatCompletionResponse {
     id: string;
-    object: 'chat.completion';
+    object: "chat.completion";
     created: number;
     model: string;
     choices: OpenAIChoice[];
@@ -64,7 +64,7 @@ export interface OpenAIChatCompletionResponse {
 export interface OpenAIChoice {
     index: number;
     message: OpenAIMessage;
-    finish_reason: 'stop' | 'length' | 'function_call' | 'content_filter' | null;
+    finish_reason: "stop" | "length" | "function_call" | "content_filter" | null;
 }
 
 export interface AnthropicMessageRequest {
@@ -80,15 +80,15 @@ export interface AnthropicMessageRequest {
 }
 
 export interface AnthropicMessage {
-    role: 'user' | 'assistant';
+    role: "user" | "assistant";
     content: string | AnthropicContent[];
 }
 
 export interface AnthropicContent {
-    type: 'text' | 'image';
+    type: "text" | "image";
     text?: string;
     source?: {
-        type: 'base64';
+        type: "base64";
         media_type: string;
         data: string;
     };
@@ -96,11 +96,11 @@ export interface AnthropicContent {
 
 export interface AnthropicMessageResponse {
     id: string;
-    type: 'message';
-    role: 'assistant';
+    type: "message";
+    role: "assistant";
     content: AnthropicContent[];
     model: string;
-    stop_reason: 'end_turn' | 'max_tokens' | 'stop_sequence' | null;
+    stop_reason: "end_turn" | "max_tokens" | "stop_sequence" | null;
     stop_sequence?: string;
     usage: {
         input_tokens: number;

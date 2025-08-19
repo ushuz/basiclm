@@ -1,10 +1,10 @@
-import * as http from 'http';
-import * as vscode from 'vscode';
-import { URL } from 'url';
-import { Logger } from '../utils/Logger';
-import { RequestHandler } from './RequestHandler';
-import { ServerConfig, ServerState } from '../types';
-import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from '../constants';
+import * as http from "http";
+import * as vscode from "vscode";
+import { URL } from "url";
+import { Logger } from "../utils/Logger";
+import { RequestHandler } from "./RequestHandler";
+import { ServerConfig, ServerState } from "../types";
+import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants";
 
 export class LMAPIServer {
     private server?: http.Server;
@@ -27,7 +27,7 @@ export class LMAPIServer {
 
     public async start(port?: number): Promise<void> {
         if (this.state.isRunning) {
-            throw new Error('Server is already running');
+            throw new Error("Server is already running");
         }
 
         const serverPort = port || this.config.port;
@@ -48,7 +48,7 @@ export class LMAPIServer {
                     this.state.host = serverHost;
                     this.state.startTime = new Date();
 
-                    Logger.info('LM API Server started', {
+                    Logger.info("LM API Server started", {
                         host: serverHost,
                         port: serverPort,
                         endpoints: {
@@ -60,21 +60,21 @@ export class LMAPIServer {
                     resolve();
                 });
 
-                this.server.on('error', (error: NodeJS.ErrnoException) => {
+                this.server.on("error", (error: NodeJS.ErrnoException) => {
                     this.state.isRunning = false;
                     
-                    if (error.code === 'EADDRINUSE') {
+                    if (error.code === "EADDRINUSE") {
                         const message = `Port ${serverPort} is already in use`;
                         Logger.error(message, error);
                         reject(new Error(message));
                     } else {
-                        Logger.error('Server startup error', error);
+                        Logger.error("Server startup error", error);
                         reject(error);
                     }
                 });
 
             } catch (error) {
-                Logger.error('Failed to create server', error as Error);
+                Logger.error("Failed to create server", error as Error);
                 reject(error);
             }
         });
@@ -92,7 +92,7 @@ export class LMAPIServer {
                 this.state.host = undefined;
                 this.state.startTime = undefined;
 
-                Logger.info('LM API Server stopped');
+                Logger.info("LM API Server stopped");
                 resolve();
             });
 
@@ -129,8 +129,8 @@ export class LMAPIServer {
             this.state.requestCount++;
 
             const hostHeader = req.headers.host || `${this.config.host}:${this.config.port}`;
-            const url = new URL(req.url || '/', `http://${hostHeader}`);
-            const method = req.method || 'GET';
+            const url = new URL(req.url || "/", `http://${hostHeader}`);
+            const method = req.method || "GET";
 
             Logger.debug(`Request: ${method} ${url.pathname}`, { requestId });
 
@@ -138,7 +138,7 @@ export class LMAPIServer {
             this.addCORSHeaders(res);
 
             // Handle preflight requests
-            if (method === 'OPTIONS') {
+            if (method === "OPTIONS") {
                 res.writeHead(HTTP_STATUS.OK);
                 res.end();
                 return;
@@ -149,10 +149,10 @@ export class LMAPIServer {
 
         } catch (error) {
             this.state.errorCount++;
-            Logger.error('Request handling error', error as Error, { requestId });
+            Logger.error("Request handling error", error as Error, { requestId });
 
             if (!res.headersSent) {
-                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Internal server error', requestId);
+                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal server error", requestId);
             }
         } finally {
             const duration = Date.now() - startTime;
@@ -200,11 +200,11 @@ export class LMAPIServer {
             return;
         }
 
-        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.writeHead(statusCode, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
             error: {
                 message,
-                type: 'api_error',
+                type: "api_error",
                 code: statusCode,
                 requestId
             }
@@ -216,24 +216,24 @@ export class LMAPIServer {
     }
 
     private loadConfig(): ServerConfig {
-        const config = vscode.workspace.getConfiguration('basiclmapi');
+        const config = vscode.workspace.getConfiguration("basiclmapi");
 
         return {
-            port: config.get<number>('port', DEFAULT_CONFIG.port),
-            host: config.get<string>('host', DEFAULT_CONFIG.host),
-            autoStart: config.get<boolean>('autoStart', DEFAULT_CONFIG.autoStart),
-            enableLogging: config.get<boolean>('enableLogging', DEFAULT_CONFIG.enableLogging)
+            port: config.get<number>("port", DEFAULT_CONFIG.port),
+            host: config.get<string>("host", DEFAULT_CONFIG.host),
+            autoStart: config.get<boolean>("autoStart", DEFAULT_CONFIG.autoStart),
+            enableLogging: config.get<boolean>("enableLogging", DEFAULT_CONFIG.enableLogging)
         };
     }
 
     private onConfigurationChanged(event: vscode.ConfigurationChangeEvent): void {
-        if (event.affectsConfiguration('basiclmapi')) {
+        if (event.affectsConfiguration("basiclmapi")) {
             const newConfig = this.loadConfig();
             const oldConfig = this.config;
 
             this.config = newConfig;
 
-            Logger.info('Configuration changed', {
+            Logger.info("Configuration changed", {
                 old: oldConfig,
                 new: newConfig
             });
@@ -243,12 +243,12 @@ export class LMAPIServer {
                 (oldConfig.port !== newConfig.port || oldConfig.host !== newConfig.host)) {
                 
                 vscode.window.showInformationMessage(
-                    'Server configuration changed. Restart required.',
-                    'Restart Now'
+                    "Server configuration changed. Restart required.",
+                    "Restart Now"
                 ).then(selection => {
-                    if (selection === 'Restart Now') {
+                    if (selection === "Restart Now") {
                         this.restart().catch(error => {
-                            Logger.error('Failed to restart server after config change', error);
+                            Logger.error("Failed to restart server after config change", error);
                         });
                     }
                 });
@@ -258,7 +258,7 @@ export class LMAPIServer {
 
     public dispose(): void {
         this.stop().catch(error => {
-            Logger.error('Error during server disposal', error);
+            Logger.error("Error during server disposal", error);
         });
 
         this.requestHandler.dispose();

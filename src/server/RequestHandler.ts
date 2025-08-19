@@ -1,6 +1,6 @@
-import * as http from 'http';
-import * as vscode from 'vscode';
-import { Logger } from '../utils/Logger';
+import * as http from "http"
+import * as vscode from "vscode"
+import { Logger } from "../utils/Logger"
 import { 
     OpenAIChatCompletionRequest, 
     OpenAIChatCompletionResponse,
@@ -8,8 +8,8 @@ import {
     AnthropicMessageResponse,
     ServerState,
     ErrorResponse
-} from '../types';
-import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from '../constants';
+} from "../types"
+import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
 
 export class RequestHandler {
     
@@ -69,7 +69,7 @@ export class RequestHandler {
                 }
 
             } catch (lmError) {
-                Logger.error('VS Code LM API error', lmError as Error, { requestId });
+                Logger.error("VS Code LM API error", lmError as Error, { requestId });
                 
                 if (lmError instanceof vscode.LanguageModelError) {
                     this.handleLanguageModelError(lmError, res, requestId);
@@ -79,10 +79,10 @@ export class RequestHandler {
             }
 
         } catch (error) {
-            Logger.error('Error handling OpenAI chat completions', error as Error, { requestId });
+            Logger.error("Error handling OpenAI chat completions", error as Error, { requestId });
             
             if (!res.headersSent) {
-                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Request processing failed', ERROR_CODES.API_ERROR, requestId);
+                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId);
             }
         }
     }
@@ -141,7 +141,7 @@ export class RequestHandler {
             }
 
         } catch (lmError) {
-            Logger.error('VS Code LM API error', lmError as Error, { requestId });
+            Logger.error("VS Code LM API error", lmError as Error, { requestId });
             
             if (lmError instanceof vscode.LanguageModelError) {
                 this.handleLanguageModelError(lmError, res, requestId);
@@ -151,10 +151,10 @@ export class RequestHandler {
         }
 
         } catch (error) {
-            Logger.error('Error handling Anthropic messages', error as Error, { requestId });
+            Logger.error("Error handling Anthropic messages", error as Error, { requestId });
             
             if (!res.headersSent) {
-                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Request processing failed', ERROR_CODES.API_ERROR, requestId);
+                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId);
             }
         }
     }
@@ -175,26 +175,26 @@ export class RequestHandler {
             const models = await vscode.lm.selectChatModels();
             
             const modelsResponse = {
-                object: 'list',
+                object: "list",
                 data: models.map(model => ({
                     id: model.id,
-                    object: 'model',
+                    object: "model",
                     created: Math.floor(Date.now() / 1000),
-                    owned_by: model.vendor || 'unknown',
+                    owned_by: model.vendor || "unknown",
                     permission: [],
                     root: model.id,
                     parent: null
                 }))
             };
 
-            res.writeHead(HTTP_STATUS.OK, { 'Content-Type': CONTENT_TYPES.JSON });
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
             res.end(JSON.stringify(modelsResponse, null, 2));
 
-            Logger.debug('Models response sent', { modelCount: models.length, requestId });
+            Logger.debug("Models response sent", { modelCount: models.length, requestId });
 
         } catch (error) {
-            Logger.error('Error handling models request', error as Error, { requestId });
-            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Failed to retrieve models', ERROR_CODES.API_ERROR, requestId);
+            Logger.error("Error handling models request", error as Error, { requestId });
+            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Failed to retrieve models", ERROR_CODES.API_ERROR, requestId);
         }
     }
 
@@ -213,7 +213,7 @@ export class RequestHandler {
             const models = await vscode.lm.selectChatModels()
             
             const healthResponse = {
-                status: 'healthy',
+                status: "healthy",
                 server: {
                     running: serverState.isRunning,
                     uptime: serverState.startTime ? Date.now() - serverState.startTime.getTime() : 0,
@@ -225,18 +225,18 @@ export class RequestHandler {
                     accessible: models.length > 0
                 },
                 endpoints: {
-                    openai: '/v1/chat/completions',
-                    anthropic: '/v1/messages'
+                    openai: "/v1/chat/completions",
+                    anthropic: "/v1/messages"
                 },
                 timestamp: new Date().toISOString()
             };
 
-            res.writeHead(HTTP_STATUS.OK, { 'Content-Type': CONTENT_TYPES.JSON });
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
             res.end(JSON.stringify(healthResponse, null, 2));
 
         } catch (error) {
-            Logger.error('Error handling health check', error as Error, { requestId });
-            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Health check failed', ERROR_CODES.API_ERROR, requestId);
+            Logger.error("Error handling health check", error as Error, { requestId });
+            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Health check failed", ERROR_CODES.API_ERROR, requestId);
         }
     }
 
@@ -338,9 +338,9 @@ export class RequestHandler {
         res.writeHead(HTTP_STATUS.OK, SSE_HEADERS);
 
         try {
-            Logger.debug('Starting OpenAI streaming response', { requestId });
+            Logger.debug("Starting OpenAI streaming response", { requestId });
 
-            let content = '';
+            let content = "";
             let chunkIndex = 0;
 
             for await (const chunk of response.text) {
@@ -348,13 +348,13 @@ export class RequestHandler {
                 
                 const streamChunk = {
                     id: `chatcmpl-${requestId}`,
-                    object: 'chat.completion.chunk',
+                    object: "chat.completion.chunk",
                     created: Math.floor(Date.now() / 1000),
                     model: request.model,
                     choices: [{
                         index: 0,
                         delta: {
-                            role: chunkIndex === 0 ? 'assistant' : undefined,
+                            role: chunkIndex === 0 ? "assistant" : undefined,
                             content: chunk
                         },
                         finish_reason: null
@@ -368,26 +368,26 @@ export class RequestHandler {
             // Send final chunk
             const finalChunk = {
                 id: `chatcmpl-${requestId}`,
-                object: 'chat.completion.chunk',
+                object: "chat.completion.chunk",
                 created: Math.floor(Date.now() / 1000),
                 model: request.model,
                 choices: [{
                     index: 0,
                     delta: {},
-                    finish_reason: 'stop'
+                    finish_reason: "stop"
                 }]
             };
 
             res.write(`data: ${JSON.stringify(finalChunk)}\n\n`);
-            res.write('data: [DONE]\n\n');
+            res.write("data: [DONE]\n\n");
 
-            Logger.debug('OpenAI streaming response completed', { requestId, contentLength: content.length });
+            Logger.debug("OpenAI streaming response completed", { requestId, contentLength: content.length });
 
         } catch (error) {
-            Logger.error('OpenAI streaming error', error as Error, { requestId });
+            Logger.error("OpenAI streaming error", error as Error, { requestId });
             const errorEvent = {
                 error: {
-                    message: 'Stream processing error',
+                    message: "Stream processing error",
                     type: ERROR_CODES.API_ERROR
                 }
             };
@@ -405,29 +405,29 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug('Collecting OpenAI full response', { requestId });
+            Logger.debug("Collecting OpenAI full response", { requestId });
 
-            let content = '';
+            let content = "";
             for await (const chunk of response.text) {
                 content += chunk;
             }
 
             const completionResponse: OpenAIChatCompletionResponse = {
                 id: `chatcmpl-${requestId}`,
-                object: 'chat.completion',
+                object: "chat.completion",
                 created: Math.floor(Date.now() / 1000),
                 model: request.model,
                 choices: [{
                     index: 0,
                     message: {
-                        role: 'assistant',
+                        role: "assistant",
                         content: content
                     },
-                    finish_reason: 'stop'
+                    finish_reason: "stop"
                 }],
                 usage: {
                     prompt_tokens: this.estimateTokens(request.messages),
-                    completion_tokens: this.estimateTokens([{ role: 'assistant', content: content }]),
+                    completion_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
                     total_tokens: 0
                 }
             };
@@ -435,17 +435,17 @@ export class RequestHandler {
             completionResponse.usage.total_tokens = 
                 completionResponse.usage.prompt_tokens + completionResponse.usage.completion_tokens;
 
-            res.writeHead(HTTP_STATUS.OK, { 'Content-Type': CONTENT_TYPES.JSON });
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
             res.end(JSON.stringify(completionResponse, null, 2));
 
-            Logger.debug('OpenAI response sent', { 
+            Logger.debug("OpenAI response sent", { 
                 requestId, 
                 contentLength: content.length,
                 totalTokens: completionResponse.usage.total_tokens
             });
 
         } catch (error) {
-            Logger.error('Error collecting OpenAI response', error as Error, { requestId });
+            Logger.error("Error collecting OpenAI response", error as Error, { requestId });
             throw error;
         }
     }
@@ -460,18 +460,18 @@ export class RequestHandler {
         res.writeHead(HTTP_STATUS.OK, SSE_HEADERS);
 
         try {
-            Logger.debug('Starting Anthropic streaming response', { requestId });
+            Logger.debug("Starting Anthropic streaming response", { requestId });
 
-            let content = '';
+            let content = "";
             let isFirst = true;
 
             // Send initial message_start event
             const messageStartEvent = {
-                type: 'message_start',
+                type: "message_start",
                 message: {
                     id: `msg_${requestId}`,
-                    type: 'message',
-                    role: 'assistant',
+                    type: "message",
+                    role: "assistant",
                     content: [],
                     model: request.model,
                     stop_reason: null,
@@ -483,11 +483,11 @@ export class RequestHandler {
 
             // Send content_block_start event
             const contentBlockStartEvent = {
-                type: 'content_block_start',
+                type: "content_block_start",
                 index: 0,
                 content_block: {
-                    type: 'text',
-                    text: ''
+                    type: "text",
+                    text: ""
                 }
             };
             res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`);
@@ -496,10 +496,10 @@ export class RequestHandler {
                 content += chunk;
                 
                 const contentBlockDeltaEvent = {
-                    type: 'content_block_delta',
+                    type: "content_block_delta",
                     index: 0,
                     delta: {
-                        type: 'text_delta',
+                        type: "text_delta",
                         text: chunk
                     }
                 };
@@ -509,25 +509,25 @@ export class RequestHandler {
 
             // Send content_block_stop event
             const contentBlockStopEvent = {
-                type: 'content_block_stop',
+                type: "content_block_stop",
                 index: 0
             };
             res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`);
 
             // Send final message_stop event
             const messageStopEvent = {
-                type: 'message_stop'
+                type: "message_stop"
             };
             res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`);
 
-            Logger.debug('Anthropic streaming response completed', { requestId, contentLength: content.length });
+            Logger.debug("Anthropic streaming response completed", { requestId, contentLength: content.length });
 
         } catch (error) {
-            Logger.error('Anthropic streaming error', error as Error, { requestId });
+            Logger.error("Anthropic streaming error", error as Error, { requestId });
             const errorEvent = {
-                type: 'error',
+                type: "error",
                 error: {
-                    message: 'Stream processing error',
+                    message: "Stream processing error",
                     type: ERROR_CODES.API_ERROR
                 }
             };
@@ -545,33 +545,33 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug('Collecting Anthropic full response', { requestId });
+            Logger.debug("Collecting Anthropic full response", { requestId });
 
-            let content = '';
+            let content = "";
             for await (const chunk of response.text) {
                 content += chunk;
             }
 
             const messageResponse: AnthropicMessageResponse = {
                 id: `msg_${requestId}`,
-                type: 'message',
-                role: 'assistant',
+                type: "message",
+                role: "assistant",
                 content: [{
-                    type: 'text',
+                    type: "text",
                     text: content
                 }],
                 model: request.model,
-                stop_reason: 'end_turn',
+                stop_reason: "end_turn",
                 usage: {
                     input_tokens: this.estimateTokens(request.messages),
-                    output_tokens: this.estimateTokens([{ role: 'assistant', content: content }])
+                    output_tokens: this.estimateTokens([{ role: "assistant", content: content }])
                 }
             };
 
-            res.writeHead(HTTP_STATUS.OK, { 'Content-Type': CONTENT_TYPES.JSON });
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
             res.end(JSON.stringify(messageResponse, null, 2));
 
-            Logger.debug('Anthropic response sent', { 
+            Logger.debug("Anthropic response sent", { 
                 requestId, 
                 contentLength: content.length,
                 inputTokens: messageResponse.usage.input_tokens,
@@ -579,7 +579,7 @@ export class RequestHandler {
             });
 
         } catch (error) {
-            Logger.error('Error collecting Anthropic response', error as Error, { requestId });
+            Logger.error("Error collecting Anthropic response", error as Error, { requestId });
             throw error;
         }
     }
@@ -594,25 +594,25 @@ export class RequestHandler {
         let message = error.message;
 
         switch (error.code) {
-            case 'NoPermissions':
+            case "NoPermissions":
                 statusCode = HTTP_STATUS.FORBIDDEN;
                 errorCode = ERROR_CODES.PERMISSION_ERROR;
-                message = 'Permission denied for language model access';
+                message = "Permission denied for language model access";
                 break;
-            case 'Blocked':
+            case "Blocked":
                 statusCode = HTTP_STATUS.FORBIDDEN;
                 errorCode = ERROR_CODES.PERMISSION_ERROR;
-                message = 'Request blocked by content filter';
+                message = "Request blocked by content filter";
                 break;
-            case 'NotFound':
+            case "NotFound":
                 statusCode = HTTP_STATUS.NOT_FOUND;
                 errorCode = ERROR_CODES.NOT_FOUND_ERROR;
-                message = 'Language model not found';
+                message = "Language model not found";
                 break;
-            case 'ContextLengthExceeded':
+            case "ContextLengthExceeded":
                 statusCode = HTTP_STATUS.BAD_REQUEST;
                 errorCode = ERROR_CODES.INVALID_REQUEST;
-                message = 'Request exceeds context length limit';
+                message = "Request exceeds context length limit";
                 break;
             default:
                 statusCode = HTTP_STATUS.BAD_GATEWAY;
@@ -642,7 +642,7 @@ export class RequestHandler {
             }
         };
 
-        res.writeHead(statusCode, { 'Content-Type': CONTENT_TYPES.JSON });
+        res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON });
         res.end(JSON.stringify(errorResponse, null, 2));
 
         Logger.error(`Error response: ${statusCode}`, new Error(message), { type, requestId });
@@ -650,30 +650,30 @@ export class RequestHandler {
 
     private async readRequestBody(req: http.IncomingMessage): Promise<string> {
         return new Promise((resolve, reject) => {
-            let body = '';
+            let body = "";
 
-            req.on('data', chunk => {
+            req.on("data", chunk => {
                 body += chunk;
                 
                 // Limit body size to 10MB
                 if (body.length > 10 * 1024 * 1024) {
-                    reject(new Error('Request body too large'));
+                    reject(new Error("Request body too large"));
                     return;
                 }
             });
 
-            req.on('end', () => resolve(body));
-            req.on('error', reject);
+            req.on("end", () => resolve(body));
+            req.on("error", reject);
         });
     }
 
     private estimateTokens(messages: any[]): number {
         // Simple token estimation - roughly 4 characters per token
         const text = messages.map(msg => 
-            typeof msg.content === 'string' ? msg.content : 
-            Array.isArray(msg.content) ? msg.content.map((c: any) => c.text || '').join('') : 
-            ''
-        ).join('');
+            typeof msg.content === "string" ? msg.content : 
+            Array.isArray(msg.content) ? msg.content.map((c: any) => c.text || "").join("") : 
+            ""
+        ).join("");
         
         return Math.ceil(text.length / 4);
     }
