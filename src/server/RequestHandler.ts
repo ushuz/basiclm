@@ -28,8 +28,8 @@ export class RequestHandler {
 
             Logger.debug("processing openai chat completions request", { requestId })
 
-            const body = await this.readRequestBody(req);
-            const request: OpenAIChatCompletionRequest = JSON.parse(body);
+            const body = await this.readRequestBody(req)
+            const request: OpenAIChatCompletionRequest = JSON.parse(body)
 
             // validate request
             if (!request.model || !request.messages || !Array.isArray(request.messages)) {
@@ -60,29 +60,29 @@ export class RequestHandler {
             const token = new vscode.CancellationTokenSource().token
 
             try {
-                const response = await model.sendRequest(vsCodeMessages, options, token);
+                const response = await model.sendRequest(vsCodeMessages, options, token)
 
                 if (request.stream) {
-                    await this.handleOpenAIStreamingResponse(response, res, request, model, requestId);
+                    await this.handleOpenAIStreamingResponse(response, res, request, model, requestId)
                 } else {
-                    await this.handleOpenAINonStreamingResponse(response, res, request, model, requestId);
+                    await this.handleOpenAINonStreamingResponse(response, res, request, model, requestId)
                 }
 
             } catch (lmError) {
-                Logger.error("VS Code LM API error", lmError as Error, { requestId });
+                Logger.error("VS Code LM API error", lmError as Error, { requestId })
                 
                 if (lmError instanceof vscode.LanguageModelError) {
-                    this.handleLanguageModelError(lmError, res, requestId);
+                    this.handleLanguageModelError(lmError, res, requestId)
                 } else {
-                    this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId);
+                    this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
                 }
             }
 
         } catch (error) {
-            Logger.error("Error handling OpenAI chat completions", error as Error, { requestId });
+            Logger.error("Error handling OpenAI chat completions", error as Error, { requestId })
             
             if (!res.headersSent) {
-                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId);
+                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId)
             }
         }
     }
@@ -132,29 +132,29 @@ export class RequestHandler {
         const token = new vscode.CancellationTokenSource().token
 
         try {
-            const response = await model.sendRequest(vsCodeMessages, options, token);
+            const response = await model.sendRequest(vsCodeMessages, options, token)
 
             if (request.stream) {
-                await this.handleAnthropicStreamingResponse(response, res, request, model, requestId);
+                await this.handleAnthropicStreamingResponse(response, res, request, model, requestId)
             } else {
-                await this.handleAnthropicNonStreamingResponse(response, res, request, model, requestId);
+                await this.handleAnthropicNonStreamingResponse(response, res, request, model, requestId)
             }
 
         } catch (lmError) {
-            Logger.error("VS Code LM API error", lmError as Error, { requestId });
+            Logger.error("VS Code LM API error", lmError as Error, { requestId })
             
             if (lmError instanceof vscode.LanguageModelError) {
-                this.handleLanguageModelError(lmError, res, requestId);
+                this.handleLanguageModelError(lmError, res, requestId)
             } else {
-                this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId);
+                this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
             }
         }
 
         } catch (error) {
-            Logger.error("Error handling Anthropic messages", error as Error, { requestId });
+            Logger.error("Error handling Anthropic messages", error as Error, { requestId })
             
             if (!res.headersSent) {
-                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId);
+                this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId)
             }
         }
     }
@@ -172,7 +172,7 @@ export class RequestHandler {
 
             Logger.debug("processing models request", { requestId })
 
-            const models = await vscode.lm.selectChatModels();
+            const models = await vscode.lm.selectChatModels()
             
             const modelsResponse = {
                 object: "list",
@@ -185,16 +185,16 @@ export class RequestHandler {
                     root: model.id,
                     parent: null
                 }))
-            };
+            }
 
-            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
-            res.end(JSON.stringify(modelsResponse, null, 2));
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
+            res.end(JSON.stringify(modelsResponse, null, 2))
 
-            Logger.debug("Models response sent", { modelCount: models.length, requestId });
+            Logger.debug("Models response sent", { modelCount: models.length, requestId })
 
         } catch (error) {
-            Logger.error("Error handling models request", error as Error, { requestId });
-            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Failed to retrieve models", ERROR_CODES.API_ERROR, requestId);
+            Logger.error("Error handling models request", error as Error, { requestId })
+            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Failed to retrieve models", ERROR_CODES.API_ERROR, requestId)
         }
     }
 
@@ -229,14 +229,14 @@ export class RequestHandler {
                     anthropic: "/v1/messages"
                 },
                 timestamp: new Date().toISOString()
-            };
+            }
 
-            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
-            res.end(JSON.stringify(healthResponse, null, 2));
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
+            res.end(JSON.stringify(healthResponse, null, 2))
 
         } catch (error) {
-            Logger.error("Error handling health check", error as Error, { requestId });
-            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Health check failed", ERROR_CODES.API_ERROR, requestId);
+            Logger.error("Error handling health check", error as Error, { requestId })
+            this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Health check failed", ERROR_CODES.API_ERROR, requestId)
         }
     }
 
@@ -335,16 +335,16 @@ export class RequestHandler {
         model: vscode.LanguageModelChat,
         requestId: string
     ): Promise<void> {
-        res.writeHead(HTTP_STATUS.OK, SSE_HEADERS);
+        res.writeHead(HTTP_STATUS.OK, SSE_HEADERS)
 
         try {
-            Logger.debug("Starting OpenAI streaming response", { requestId });
+            Logger.debug("Starting OpenAI streaming response", { requestId })
 
-            let content = "";
-            let chunkIndex = 0;
+            let content = ""
+            let chunkIndex = 0
 
             for await (const chunk of response.text) {
-                content += chunk;
+                content += chunk
                 
                 const streamChunk = {
                     id: `chatcmpl-${requestId}`,
@@ -359,10 +359,10 @@ export class RequestHandler {
                         },
                         finish_reason: null
                     }]
-                };
+                }
 
-                res.write(`data: ${JSON.stringify(streamChunk)}\n\n`);
-                chunkIndex++;
+                res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
+                chunkIndex++
             }
 
             // Send final chunk
@@ -376,24 +376,24 @@ export class RequestHandler {
                     delta: {},
                     finish_reason: "stop"
                 }]
-            };
+            }
 
-            res.write(`data: ${JSON.stringify(finalChunk)}\n\n`);
-            res.write("data: [DONE]\n\n");
+            res.write(`data: ${JSON.stringify(finalChunk)}\n\n`)
+            res.write("data: [DONE]\n\n")
 
-            Logger.debug("OpenAI streaming response completed", { requestId, contentLength: content.length });
+            Logger.debug("OpenAI streaming response completed", { requestId, contentLength: content.length })
 
         } catch (error) {
-            Logger.error("OpenAI streaming error", error as Error, { requestId });
+            Logger.error("OpenAI streaming error", error as Error, { requestId })
             const errorEvent = {
                 error: {
                     message: "Stream processing error",
                     type: ERROR_CODES.API_ERROR
                 }
-            };
-            res.write(`data: ${JSON.stringify(errorEvent)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
         } finally {
-            res.end();
+            res.end()
         }
     }
 
@@ -405,11 +405,11 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug("Collecting OpenAI full response", { requestId });
+            Logger.debug("Collecting OpenAI full response", { requestId })
 
-            let content = "";
+            let content = ""
             for await (const chunk of response.text) {
-                content += chunk;
+                content += chunk
             }
 
             const completionResponse: OpenAIChatCompletionResponse = {
@@ -430,23 +430,23 @@ export class RequestHandler {
                     completion_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
                     total_tokens: 0
                 }
-            };
+            }
 
             completionResponse.usage.total_tokens = 
-                completionResponse.usage.prompt_tokens + completionResponse.usage.completion_tokens;
+                completionResponse.usage.prompt_tokens + completionResponse.usage.completion_tokens
 
-            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
-            res.end(JSON.stringify(completionResponse, null, 2));
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
+            res.end(JSON.stringify(completionResponse, null, 2))
 
             Logger.debug("OpenAI response sent", { 
                 requestId, 
                 contentLength: content.length,
                 totalTokens: completionResponse.usage.total_tokens
-            });
+            })
 
         } catch (error) {
-            Logger.error("Error collecting OpenAI response", error as Error, { requestId });
-            throw error;
+            Logger.error("Error collecting OpenAI response", error as Error, { requestId })
+            throw error
         }
     }
 
@@ -457,13 +457,13 @@ export class RequestHandler {
         model: vscode.LanguageModelChat,
         requestId: string
     ): Promise<void> {
-        res.writeHead(HTTP_STATUS.OK, SSE_HEADERS);
+        res.writeHead(HTTP_STATUS.OK, SSE_HEADERS)
 
         try {
-            Logger.debug("Starting Anthropic streaming response", { requestId });
+            Logger.debug("Starting Anthropic streaming response", { requestId })
 
-            let content = "";
-            let isFirst = true;
+            let content = ""
+            let isFirst = true
 
             // Send initial message_start event
             const messageStartEvent = {
@@ -478,8 +478,8 @@ export class RequestHandler {
                     stop_sequence: null,
                     usage: { input_tokens: 0, output_tokens: 0 }
                 }
-            };
-            res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
             // Send content_block_start event
             const contentBlockStartEvent = {
@@ -489,11 +489,11 @@ export class RequestHandler {
                     type: "text",
                     text: ""
                 }
-            };
-            res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
             for await (const chunk of response.text) {
-                content += chunk;
+                content += chunk
                 
                 const contentBlockDeltaEvent = {
                     type: "content_block_delta",
@@ -502,38 +502,38 @@ export class RequestHandler {
                         type: "text_delta",
                         text: chunk
                     }
-                };
+                }
 
-                res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`);
+                res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
             }
 
             // Send content_block_stop event
             const contentBlockStopEvent = {
                 type: "content_block_stop",
                 index: 0
-            };
-            res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
 
             // Send final message_stop event
             const messageStopEvent = {
                 type: "message_stop"
-            };
-            res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
-            Logger.debug("Anthropic streaming response completed", { requestId, contentLength: content.length });
+            Logger.debug("Anthropic streaming response completed", { requestId, contentLength: content.length })
 
         } catch (error) {
-            Logger.error("Anthropic streaming error", error as Error, { requestId });
+            Logger.error("Anthropic streaming error", error as Error, { requestId })
             const errorEvent = {
                 type: "error",
                 error: {
                     message: "Stream processing error",
                     type: ERROR_CODES.API_ERROR
                 }
-            };
-            res.write(`data: ${JSON.stringify(errorEvent)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
         } finally {
-            res.end();
+            res.end()
         }
     }
 
@@ -545,11 +545,11 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug("Collecting Anthropic full response", { requestId });
+            Logger.debug("Collecting Anthropic full response", { requestId })
 
-            let content = "";
+            let content = ""
             for await (const chunk of response.text) {
-                content += chunk;
+                content += chunk
             }
 
             const messageResponse: AnthropicMessageResponse = {
@@ -566,21 +566,21 @@ export class RequestHandler {
                     input_tokens: this.estimateTokens(request.messages),
                     output_tokens: this.estimateTokens([{ role: "assistant", content: content }])
                 }
-            };
+            }
 
-            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON });
-            res.end(JSON.stringify(messageResponse, null, 2));
+            res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
+            res.end(JSON.stringify(messageResponse, null, 2))
 
             Logger.debug("Anthropic response sent", { 
                 requestId, 
                 contentLength: content.length,
                 inputTokens: messageResponse.usage.input_tokens,
                 outputTokens: messageResponse.usage.output_tokens
-            });
+            })
 
         } catch (error) {
-            Logger.error("Error collecting Anthropic response", error as Error, { requestId });
-            throw error;
+            Logger.error("Error collecting Anthropic response", error as Error, { requestId })
+            throw error
         }
     }
 
@@ -589,38 +589,38 @@ export class RequestHandler {
         res: http.ServerResponse,
         requestId: string
     ): void {
-        let statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-        let errorCode: string = ERROR_CODES.API_ERROR;
-        let message = error.message;
+        let statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR
+        let errorCode: string = ERROR_CODES.API_ERROR
+        let message = error.message
 
         switch (error.code) {
             case "NoPermissions":
-                statusCode = HTTP_STATUS.FORBIDDEN;
-                errorCode = ERROR_CODES.PERMISSION_ERROR;
-                message = "Permission denied for language model access";
-                break;
+                statusCode = HTTP_STATUS.FORBIDDEN
+                errorCode = ERROR_CODES.PERMISSION_ERROR
+                message = "Permission denied for language model access"
+                break
             case "Blocked":
-                statusCode = HTTP_STATUS.FORBIDDEN;
-                errorCode = ERROR_CODES.PERMISSION_ERROR;
-                message = "Request blocked by content filter";
-                break;
+                statusCode = HTTP_STATUS.FORBIDDEN
+                errorCode = ERROR_CODES.PERMISSION_ERROR
+                message = "Request blocked by content filter"
+                break
             case "NotFound":
-                statusCode = HTTP_STATUS.NOT_FOUND;
-                errorCode = ERROR_CODES.NOT_FOUND_ERROR;
-                message = "Language model not found";
-                break;
+                statusCode = HTTP_STATUS.NOT_FOUND
+                errorCode = ERROR_CODES.NOT_FOUND_ERROR
+                message = "Language model not found"
+                break
             case "ContextLengthExceeded":
-                statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorCode = ERROR_CODES.INVALID_REQUEST;
-                message = "Request exceeds context length limit";
-                break;
+                statusCode = HTTP_STATUS.BAD_REQUEST
+                errorCode = ERROR_CODES.INVALID_REQUEST
+                message = "Request exceeds context length limit"
+                break
             default:
-                statusCode = HTTP_STATUS.BAD_GATEWAY;
-                errorCode = ERROR_CODES.API_ERROR;
-                message = `Language model error: ${error.message}`;
+                statusCode = HTTP_STATUS.BAD_GATEWAY
+                errorCode = ERROR_CODES.API_ERROR
+                message = `Language model error: ${error.message}`
         }
 
-        this.sendError(res, statusCode, message, errorCode, requestId);
+        this.sendError(res, statusCode, message, errorCode, requestId)
     }
 
     private sendError(
@@ -631,7 +631,7 @@ export class RequestHandler {
         requestId: string
     ): void {
         if (res.headersSent) {
-            return;
+            return
         }
 
         const errorResponse: ErrorResponse = {
@@ -640,31 +640,31 @@ export class RequestHandler {
                 type,
                 code: statusCode.toString()
             }
-        };
+        }
 
-        res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON });
-        res.end(JSON.stringify(errorResponse, null, 2));
+        res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
+        res.end(JSON.stringify(errorResponse, null, 2))
 
-        Logger.error(`Error response: ${statusCode}`, new Error(message), { type, requestId });
+        Logger.error(`Error response: ${statusCode}`, new Error(message), { type, requestId })
     }
 
     private async readRequestBody(req: http.IncomingMessage): Promise<string> {
         return new Promise((resolve, reject) => {
-            let body = "";
+            let body = ""
 
             req.on("data", chunk => {
-                body += chunk;
+                body += chunk
                 
                 // Limit body size to 10MB
                 if (body.length > 10 * 1024 * 1024) {
-                    reject(new Error("Request body too large"));
-                    return;
+                    reject(new Error("Request body too large"))
+                    return
                 }
-            });
+            })
 
-            req.on("end", () => resolve(body));
-            req.on("error", reject);
-        });
+            req.on("end", () => resolve(body))
+            req.on("error", reject)
+        })
     }
 
     private estimateTokens(messages: any[]): number {
@@ -673,9 +673,9 @@ export class RequestHandler {
             typeof msg.content === "string" ? msg.content : 
             Array.isArray(msg.content) ? msg.content.map((c: any) => c.text || "").join("") : 
             ""
-        ).join("");
+        ).join("")
         
-        return Math.ceil(text.length / 4);
+        return Math.ceil(text.length / 4)
     }
 
     public dispose(): void {
