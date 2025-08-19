@@ -7,7 +7,7 @@
 
 const http = require('http');
 
-const BASE_URL = 'http://127.0.0.1:8001';
+const BASE_URL = 'http://127.0.0.1:8099';
 
 function makeRequest(options, data) {
     return new Promise((resolve, reject) => {
@@ -38,7 +38,7 @@ async function testHealth() {
     try {
         const response = await makeRequest({
             hostname: '127.0.0.1',
-            port: 8001,
+            port: 8099,
             path: '/health',
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
@@ -56,7 +56,7 @@ async function testModels() {
     try {
         const response = await makeRequest({
             hostname: '127.0.0.1',
-            port: 8001,
+            port: 8099,
             path: '/v1/models',
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
@@ -77,7 +77,7 @@ async function testOpenAI() {
     try {
         const response = await makeRequest({
             hostname: '127.0.0.1',
-            port: 8001,
+            port: 8099,
             path: '/v1/chat/completions',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
@@ -105,7 +105,7 @@ async function testAnthropic() {
     try {
         const response = await makeRequest({
             hostname: '127.0.0.1',
-            port: 8001,
+            port: 8099,
             path: '/v1/messages',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }

@@ -1,9 +1,9 @@
 {
   "name": "basiclmapi",
-  "displayName": "Basic LM API",
+  "displayName": "BasicLM",
   "description": "Bridge VS Code Language Model API to OpenAI and Anthropic compatible HTTP endpoints",
   "version": "0.1.0",
-  "publisher": "basiclmapi",
+  "publisher": "ushuz",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -25,31 +25,31 @@
     "commands": [
       {
         "command": "basiclmapi.start",
-        "title": "Start LM API Server",
-        "category": "Basic LM API"
+        "title": "Start BasicLM Server",
+        "category": "BasicLM"
       },
       {
         "command": "basiclmapi.stop",
-        "title": "Stop LM API Server",
-        "category": "Basic LM API"
+        "title": "Stop BasicLM Server",
+        "category": "BasicLM"
       },
       {
         "command": "basiclmapi.restart",
-        "title": "Restart LM API Server",
-        "category": "Basic LM API"
+        "title": "Restart BasicLM Server",
+        "category": "BasicLM"
       },
       {
         "command": "basiclmapi.status",
         "title": "Show Server Status",
-        "category": "Basic LM API"
+        "category": "BasicLM"
       }
     ],
     "configuration": {
-      "title": "Basic LM API",
+      "title": "BasicLM",
       "properties": {
         "basiclmapi.port": {
           "type": "number",
-          "default": 8001,
+          "default": 8099,
           "minimum": 1024,
           "maximum": 65535,
           "description": "HTTP server port"

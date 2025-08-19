@@ -1,4 +1,4 @@
-# Basic LM API
+# BasicLM
 
 A VS Code extension that bridges the VS Code Language Model API to OpenAI and Anthropic compatible HTTP endpoints.
 
@@ -15,11 +15,11 @@ A VS Code extension that bridges the VS Code Language Model API to OpenAI and An
 
 1. Install the extension in VS Code
 2. Ensure you have GitHub Copilot enabled and working
-3. Start the server using Command Palette: "Basic LM API: Start LM API Server"
+3. Start the server using Command Palette: "BasicLM: Start BasicLM Server"
 
 ## Configuration
 
-- `basiclmapi.port`: Server port (default: 8001)
+- `basiclmapi.port`: Server port (default: 8099)
 - `basiclmapi.host`: Server host (default: 127.0.0.1) 
 - `basiclmapi.autoStart`: Auto-start server when VS Code starts
 - `basiclmapi.enableLogging`: Enable detailed logging
@@ -28,33 +28,33 @@ A VS Code extension that bridges the VS Code Language Model API to OpenAI and An
 
 ### OpenAI Chat Completions
 ```
-POST http://127.0.0.1:8001/v1/chat/completions
+POST http://127.0.0.1:8099/v1/chat/completions
 ```
 
 Compatible with OpenAI's chat completions API format.
 
 ### Anthropic Messages
 ```  
-POST http://127.0.0.1:8001/v1/messages
+POST http://127.0.0.1:8099/v1/messages
 ```
 
 Compatible with Anthropic's messages API format.
 
 ### Models List
 ```
-GET http://127.0.0.1:8001/v1/models
+GET http://127.0.0.1:8099/v1/models
 ```
 
 ### Health Check
 ```
-GET http://127.0.0.1:8001/health
+GET http://127.0.0.1:8099/health
 ```
 
 ## Example Usage
 
 ### OpenAI Format
 ```bash
-curl -X POST http://127.0.0.1:8001/v1/chat/completions \
+curl -X POST http://127.0.0.1:8099/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4",
@@ -66,7 +66,7 @@ curl -X POST http://127.0.0.1:8001/v1/chat/completions \
 
 ### Anthropic Format
 ```bash
-curl -X POST http://127.0.0.1:8001/v1/messages \
+curl -X POST http://127.0.0.1:8099/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
     "model": "claude-3-sonnet-20240229",

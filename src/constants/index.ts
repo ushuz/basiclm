@@ -1,5 +1,5 @@
 export const DEFAULT_CONFIG = {
-  port: 8001,
+  port: 8099,
   host: "127.0.0.1",
   autoStart: false,
   enableLogging: true

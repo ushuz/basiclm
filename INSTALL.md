@@ -23,7 +23,7 @@
 
 1. **Start the server:**
    - Open Command Palette (Ctrl+Shift+P)
-   - Run "Basic LM API: Start LM API Server"
+   - Run "BasicLM: Start BasicLM Server"
    - Check status bar for server status
 
 2. **Test the endpoints:**
@@ -35,7 +35,7 @@
 
    **OpenAI Format:**
    ```bash
-   curl -X POST http://127.0.0.1:8001/v1/chat/completions \
+   curl -X POST http://127.0.0.1:8099/v1/chat/completions \
      -H "Content-Type: application/json" \
      -d '{
        "model": "gpt-4",
@@ -45,7 +45,7 @@
 
    **Anthropic Format:**
    ```bash
-   curl -X POST http://127.0.0.1:8001/v1/messages \
+   curl -X POST http://127.0.0.1:8099/v1/messages \
      -H "Content-Type: application/json" \
      -d '{
        "model": "claude-3-sonnet-20240229", 
@@ -60,7 +60,7 @@ Access via VS Code Settings (Ctrl+,) or settings.json:
 
 ```json
 {
-  "basiclmapi.port": 8001,
+  "basiclmapi.port": 8099,
   "basiclmapi.host": "127.0.0.1",
   "basiclmapi.autoStart": false,
   "basiclmapi.enableLogging": true
@@ -71,8 +71,8 @@ Access via VS Code Settings (Ctrl+,) or settings.json:
 
 1. **Server won't start:**
    - Check if GitHub Copilot is working in VS Code
-   - Verify port 8001 is not in use
-   - Check Output panel "Basic LM API" for logs
+   - Verify port 8099 is not in use
+   - Check Output panel "BasicLM" for logs
 
 2. **No models available:**
    - Ensure GitHub Copilot subscription is active

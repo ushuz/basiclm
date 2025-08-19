@@ -6,7 +6,7 @@ let server: LMAPIServer
 let statusBarItem: vscode.StatusBarItem
 
 export function activate(context: vscode.ExtensionContext) {
-  Logger.info("Basic LM API extension activating")
+  Logger.info("BasicLM extension activating")
 
   // Initialize server
   server = new LMAPIServer()
@@ -35,11 +35,11 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   updateStatusBar()
-  Logger.info("Basic LM API extension activated")
+  Logger.info("BasicLM extension activated")
 }
 
 export function deactivate() {
-  Logger.info("Basic LM API extension deactivating")
+  Logger.info("BasicLM extension deactivating")
 
   if (server) {
     server.dispose()
@@ -61,7 +61,7 @@ function registerCommands(context: vscode.ExtensionContext) {
 
       await server.start()
       updateStatusBar()
-      vscode.window.showInformationMessage("LM API Server started successfully")
+      vscode.window.showInformationMessage("BasicLM Server started successfully")
     } catch (error) {
       const errorMessage = `Failed to start server: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
@@ -79,7 +79,7 @@ function registerCommands(context: vscode.ExtensionContext) {
 
       await server.stop()
       updateStatusBar()
-      vscode.window.showInformationMessage("LM API Server stopped")
+      vscode.window.showInformationMessage("BasicLM Server stopped")
     } catch (error) {
       const errorMessage = `Failed to stop server: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
@@ -92,7 +92,7 @@ function registerCommands(context: vscode.ExtensionContext) {
     try {
       await server.restart()
       updateStatusBar()
-      vscode.window.showInformationMessage("LM API Server restarted")
+      vscode.window.showInformationMessage("BasicLM Server restarted")
     } catch (error) {
       const errorMessage = `Failed to restart server: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
@@ -117,12 +117,12 @@ function updateStatusBar() {
   const state = server.getState()
 
   if (state.isRunning) {
-    statusBarItem.text = `$(server) LM API :${state.port}`
-    statusBarItem.tooltip = `LM API Server running on http://${state.host}:${state.port}\nClick for details`
+    statusBarItem.text = `$(server) BasicLM :${state.port}`
+    statusBarItem.tooltip = `BasicLM Server running on http://${state.host}:${state.port}\nClick for details`
     statusBarItem.backgroundColor = undefined
   } else {
-    statusBarItem.text = "$(server) LM API (stopped)"
-    statusBarItem.tooltip = "LM API Server is stopped\nClick to start"
+    statusBarItem.text = "$(server) BasicLM (stopped)"
+    statusBarItem.tooltip = "BasicLM Server is stopped\nClick to start"
     statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground")
   }
 
@@ -139,12 +139,12 @@ async function showServerStatus() {
     const items = [
       {
         label: "Stop Server",
-        description: "Stop the LM API server",
+        description: "Stop the BasicLM server",
         action: "stop"
       },
       {
         label: "Restart Server",
-        description: "Restart the LM API server",
+        description: "Restart the BasicLM server",
         action: "restart"
       },
       {
@@ -160,7 +160,7 @@ async function showServerStatus() {
     ]
 
     const selected = await vscode.window.showQuickPick(items, {
-      title: "LM API Server Status",
+      title: "BasicLM Server Status",
       placeHolder: `Running on http://${state.host}:${state.port} | Uptime: ${uptimeStr} | Requests: ${state.requestCount}`
     })
 
@@ -183,7 +183,7 @@ async function showServerStatus() {
     ]
 
     const selected = await vscode.window.showQuickPick(items, {
-      title: "LM API Server Status",
+      title: "BasicLM Server Status",
       placeHolder: "Server is stopped"
     })
 

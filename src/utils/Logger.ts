@@ -4,7 +4,7 @@ class LoggerService {
   private outputChannel: vscode.OutputChannel
 
   constructor() {
-    this.outputChannel = vscode.window.createOutputChannel("Basic LM API")
+    this.outputChannel = vscode.window.createOutputChannel("BasicLM")
   }
 
   private formatMessage(level: string, message: string, context?: any): string {
