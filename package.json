@@ -79,7 +79,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "test-api": "node test/api-test.js"
   },
   "devDependencies": {
     "@types/vscode": "^1.92.0",
