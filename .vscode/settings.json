@@ -1,0 +1,21 @@
+{
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "files.exclude": {
+        "out": false,
+        "node_modules": true,
+        "**/.tsbuildinfo": true
+    },
+    "search.exclude": {
+        "out": true,
+        "node_modules": true,
+        "**/.tsbuildinfo": true
+    },
+    "typescript.tsc.autoDetect": "off",
+    "eslint.validate": [
+        "typescript"
+    ]
+}
