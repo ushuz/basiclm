@@ -16,11 +16,15 @@
         "format": ["camelCase", "PascalCase"]
       }
     ],
-    "@typescript-eslint/semi": "off",
+    "@typescript-eslint/semi": ["error", "never"],
+    "semi": ["error", "never"],
+    "quotes": ["error", "double"],
+    "@typescript-eslint/quotes": ["error", "double"],
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "@typescript-eslint/indent": ["error", 2, { "SwitchCase": 1 }],
     "curly": "off",
     "eqeqeq": "warn",
-    "no-throw-literal": "warn",
-    "semi": "off"
+    "no-throw-literal": "warn"
   },
   "ignorePatterns": [
     "out",
