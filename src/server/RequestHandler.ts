@@ -21,34 +21,43 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug('Processing OpenAI chat completions request', { requestId });
+            if (req.method !== "POST") {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
+                return
+            }
+
+            Logger.debug("processing openai chat completions request", { requestId })
 
             const body = await this.readRequestBody(req);
             const request: OpenAIChatCompletionRequest = JSON.parse(body);
 
-            // Validate request
+            // validate request
             if (!request.model || !request.messages || !Array.isArray(request.messages)) {
-                this.sendError(res, HTTP_STATUS.BAD_REQUEST, 'Invalid request: model and messages are required', ERROR_CODES.INVALID_REQUEST, requestId);
-                return;
+                this.sendError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model and messages are required", ERROR_CODES.INVALID_REQUEST, requestId)
+                return
             }
 
-            // Check VS Code Language Model access
-            const models = await vscode.lm.selectChatModels();
+            // check vs code language model access
+            const models = await vscode.lm.selectChatModels()
             if (models.length === 0) {
-                this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, 'No language models available', ERROR_CODES.API_ERROR, requestId);
-                return;
+                this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
+                return
             }
 
-            // Select an appropriate model (use first available)
-            const model = models[0];
-            Logger.debug('Selected VS Code model', { modelId: model.id, family: model.family, requestId });
+            // select model based on request
+            const model = this.selectModel(models, request.model)
+            if (!model) {
+                this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
+                return
+            }
+            Logger.debug("selected vs code model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
 
-            // Convert OpenAI messages to VS Code format
-            const vsCodeMessages = this.convertOpenAIMessagesToVSCode(request.messages);
+            // convert openai messages to vs code format
+            const vsCodeMessages = this.convertOpenAIMessagesToVSCode(request.messages)
 
-            // Make request to VS Code Language Model API
-            const options = {};
-            const token = new vscode.CancellationTokenSource().token;
+            // make request to vs code language model api
+            const options = {}
+            const token = new vscode.CancellationTokenSource().token
 
             try {
                 const response = await model.sendRequest(vsCodeMessages, options, token);
@@ -84,34 +93,43 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug('Processing Anthropic messages request', { requestId });
+            if (req.method !== "POST") {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
+                return
+            }
 
-            const body = await this.readRequestBody(req);
-            const request: AnthropicMessageRequest = JSON.parse(body);
+            Logger.debug("processing anthropic messages request", { requestId })
 
-            // Validate request
+            const body = await this.readRequestBody(req)
+            const request: AnthropicMessageRequest = JSON.parse(body)
+
+            // validate request
             if (!request.model || !request.messages || !Array.isArray(request.messages) || !request.max_tokens) {
-                this.sendError(res, HTTP_STATUS.BAD_REQUEST, 'Invalid request: model, messages, and max_tokens are required', ERROR_CODES.INVALID_REQUEST, requestId);
-                return;
+                this.sendError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model, messages, and max_tokens are required", ERROR_CODES.INVALID_REQUEST, requestId)
+                return
             }
 
-            // Check VS Code Language Model access
-            const models = await vscode.lm.selectChatModels();
+            // check vs code language model access
+            const models = await vscode.lm.selectChatModels()
             if (models.length === 0) {
-                this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, 'No language models available', ERROR_CODES.API_ERROR, requestId);
-                return;
+                this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
+                return
             }
 
-            // Select an appropriate model (use first available)
-            const model = models[0];
-            Logger.debug('Selected VS Code model', { modelId: model.id, family: model.family, requestId });
+            // select model based on request
+            const model = this.selectModel(models, request.model)
+            if (!model) {
+                this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
+                return
+            }
+            Logger.debug("selected vs code model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
 
-        // Convert Anthropic messages to VS Code format
-        const vsCodeMessages = this.convertAnthropicMessagesToVSCode(request.messages, request.system);
+        // convert anthropic messages to vs code format
+        const vsCodeMessages = this.convertAnthropicMessagesToVSCode(request.messages, request.system)
 
-        // Make request to VS Code Language Model API
-        const options = {};
-        const token = new vscode.CancellationTokenSource().token;
+        // make request to vs code language model api
+        const options = {}
+        const token = new vscode.CancellationTokenSource().token
 
         try {
             const response = await model.sendRequest(vsCodeMessages, options, token);
@@ -147,7 +165,12 @@ export class RequestHandler {
         requestId: string
     ): Promise<void> {
         try {
-            Logger.debug('Processing models request', { requestId });
+            if (req.method !== "GET") {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
+                return
+            }
+
+            Logger.debug("processing models request", { requestId })
 
             const models = await vscode.lm.selectChatModels();
             
@@ -182,7 +205,12 @@ export class RequestHandler {
         serverState: ServerState
     ): Promise<void> {
         try {
-            const models = await vscode.lm.selectChatModels();
+            if (req.method !== "GET") {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
+                return
+            }
+
+            const models = await vscode.lm.selectChatModels()
             
             const healthResponse = {
                 status: 'healthy',
@@ -212,64 +240,92 @@ export class RequestHandler {
         }
     }
 
+    private selectModel(models: vscode.LanguageModelChat[], requestedModel: string): vscode.LanguageModelChat | null {
+        // exact match by id
+        let match = models.find(m => m.id === requestedModel)
+        if (match) return match
+
+        // try to match by family or partial id
+        match = models.find(m => m.family && requestedModel.toLowerCase().includes(m.family.toLowerCase()))
+        if (match) return match
+
+        // map common model names to families
+        const modelFamilyMap: { [key: string]: string } = {
+            "gpt-4": "gpt-4",
+            "gpt-3.5": "gpt-35-turbo",
+            "claude": "claude",
+            "gemini": "gemini"
+        }
+
+        for (const [pattern, family] of Object.entries(modelFamilyMap)) {
+            if (requestedModel.toLowerCase().includes(pattern)) {
+                match = models.find(m => m.family && m.family.toLowerCase().includes(family))
+                if (match) return match
+            }
+        }
+
+        // fallback to first available model
+        return models.length > 0 ? models[0] : null
+    }
+
     private convertOpenAIMessagesToVSCode(messages: any[]): vscode.LanguageModelChatMessage[] {
         return messages.map(msg => {
-            const role = msg.role === 'system' ? vscode.LanguageModelChatMessageRole.User :
-                        msg.role === 'user' ? vscode.LanguageModelChatMessageRole.User :
-                        vscode.LanguageModelChatMessageRole.Assistant;
+            const role = msg.role === "system" ? vscode.LanguageModelChatMessageRole.User :
+                        msg.role === "user" ? vscode.LanguageModelChatMessageRole.User :
+                        vscode.LanguageModelChatMessageRole.Assistant
 
-            let content = '';
-            if (typeof msg.content === 'string') {
-                content = msg.content;
-            } else if (Array.isArray(msg.content)) {
-                // Handle multimodal content - extract text for now
+            let content = ""
+            if (typeof msg.content === "string") {
                 content = msg.content
-                    .filter((part: any) => part.type === 'text')
+            } else if (Array.isArray(msg.content)) {
+                // handle multimodal content - extract text for now
+                content = msg.content
+                    .filter((part: any) => part.type === "text")
                     .map((part: any) => part.text)
-                    .join('\n');
+                    .join("\n")
             }
 
-            // For system messages, prepend a system indicator
-            if (msg.role === 'system') {
-                content = `[SYSTEM] ${content}`;
+            // for system messages, prepend a system indicator
+            if (msg.role === "system") {
+                content = `[SYSTEM] ${content}`
             }
 
-            return vscode.LanguageModelChatMessage.User(content);
-        });
+            return vscode.LanguageModelChatMessage.User(content)
+        })
     }
 
     private convertAnthropicMessagesToVSCode(messages: any[], system?: string): vscode.LanguageModelChatMessage[] {
-        const vsCodeMessages: vscode.LanguageModelChatMessage[] = [];
+        const vsCodeMessages: vscode.LanguageModelChatMessage[] = []
 
-        // Add system message if provided
+        // add system message if provided
         if (system) {
-            vsCodeMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${system}`));
+            vsCodeMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${system}`))
         }
 
-        // Convert messages
+        // convert messages
         messages.forEach(msg => {
-            const role = msg.role === 'user' ? vscode.LanguageModelChatMessageRole.User :
-                        vscode.LanguageModelChatMessageRole.Assistant;
+            const role = msg.role === "user" ? vscode.LanguageModelChatMessageRole.User :
+                        vscode.LanguageModelChatMessageRole.Assistant
 
-            let content = '';
-            if (typeof msg.content === 'string') {
-                content = msg.content;
-            } else if (Array.isArray(msg.content)) {
-                // Handle multimodal content - extract text for now
+            let content = ""
+            if (typeof msg.content === "string") {
                 content = msg.content
-                    .filter((part: any) => part.type === 'text')
+            } else if (Array.isArray(msg.content)) {
+                // handle multimodal content - extract text for now
+                content = msg.content
+                    .filter((part: any) => part.type === "text")
                     .map((part: any) => part.text)
-                    .join('\n');
+                    .join("\n")
             }
 
             if (role === vscode.LanguageModelChatMessageRole.User) {
-                vsCodeMessages.push(vscode.LanguageModelChatMessage.User(content));
+                vsCodeMessages.push(vscode.LanguageModelChatMessage.User(content))
             } else {
-                vsCodeMessages.push(vscode.LanguageModelChatMessage.Assistant(content));
+                vsCodeMessages.push(vscode.LanguageModelChatMessage.Assistant(content))
             }
-        });
+        })
 
-        return vsCodeMessages;
+        return vsCodeMessages
     }
 
     private async handleOpenAIStreamingResponse(

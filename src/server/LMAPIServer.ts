@@ -169,39 +169,23 @@ export class LMAPIServer {
     ): Promise<void> {
         switch (pathname) {
             case API_ENDPOINTS.OPENAI_CHAT_COMPLETIONS:
-                if (method === 'POST') {
-                    await this.requestHandler.handleOpenAIChatCompletions(req, res, requestId);
-                } else {
-                    this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
-                }
-                break;
+                await this.requestHandler.handleOpenAIChatCompletions(req, res, requestId)
+                break
 
             case API_ENDPOINTS.ANTHROPIC_MESSAGES:
-                if (method === 'POST') {
-                    await this.requestHandler.handleAnthropicMessages(req, res, requestId);
-                } else {
-                    this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
-                }
-                break;
+                await this.requestHandler.handleAnthropicMessages(req, res, requestId)
+                break
 
             case API_ENDPOINTS.MODELS:
-                if (method === 'GET') {
-                    await this.requestHandler.handleModels(req, res, requestId);
-                } else {
-                    this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
-                }
-                break;
+                await this.requestHandler.handleModels(req, res, requestId)
+                break
 
             case API_ENDPOINTS.HEALTH:
-                if (method === 'GET') {
-                    await this.requestHandler.handleHealth(req, res, requestId, this.state);
-                } else {
-                    this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
-                }
-                break;
+                await this.requestHandler.handleHealth(req, res, requestId, this.state)
+                break
 
             default:
-                this.sendError(res, HTTP_STATUS.NOT_FOUND, 'Endpoint not found', requestId);
+                this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
         }
     }
 
