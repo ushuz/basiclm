@@ -1,8 +1,8 @@
 import * as http from "http"
 import * as vscode from "vscode"
 import { Logger } from "../utils/Logger"
-import { 
-  OpenAIChatCompletionRequest, 
+import {
+  OpenAIChatCompletionRequest,
   OpenAIChatCompletionResponse,
   AnthropicMessageRequest,
   AnthropicMessageResponse,
@@ -12,7 +12,7 @@ import {
 import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
 
 export class RequestHandler {
-    
+
   constructor() {}
 
   public async handleOpenAIChatCompletions(
@@ -70,7 +70,7 @@ export class RequestHandler {
 
       } catch (lmError) {
         Logger.error("VS Code LM API error", lmError as Error, { requestId })
-                
+
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId)
         } else {
@@ -80,7 +80,7 @@ export class RequestHandler {
 
     } catch (error) {
       Logger.error("error handling OpenAI chat completions", error as Error, { requestId })
-            
+
       if (!res.headersSent) {
         this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
       }
@@ -142,7 +142,7 @@ export class RequestHandler {
 
       } catch (lmError) {
         Logger.error("VS Code LM API error", lmError as Error, { requestId })
-            
+
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId)
         } else {
@@ -152,7 +152,7 @@ export class RequestHandler {
 
     } catch (error) {
       Logger.error("error handling Anthropic messages", error as Error, { requestId })
-            
+
       if (!res.headersSent) {
         this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
       }
@@ -173,7 +173,7 @@ export class RequestHandler {
       Logger.debug("processing models request", { requestId })
 
       const models = await vscode.lm.selectChatModels()
-            
+
       const modelsResponse = {
         object: "list",
         data: models.map(model => ({
@@ -211,7 +211,7 @@ export class RequestHandler {
       }
 
       const models = await vscode.lm.selectChatModels()
-            
+
       const healthResponse = {
         status: "healthy",
         server: {
@@ -330,7 +330,7 @@ export class RequestHandler {
 
       for await (const chunk of response.text) {
         content += chunk
-                
+
         const streamChunk = {
           id: `chatcmpl-${requestId}`,
           object: "chat.completion.chunk",
@@ -350,7 +350,7 @@ export class RequestHandler {
         chunkIndex++
       }
 
-      // Send final chunk
+      // send final chunk
       const finalChunk = {
         id: `chatcmpl-${requestId}`,
         object: "chat.completion.chunk",
@@ -417,14 +417,14 @@ export class RequestHandler {
         }
       }
 
-      completionResponse.usage.total_tokens = 
+      completionResponse.usage.total_tokens =
                 completionResponse.usage.prompt_tokens + completionResponse.usage.completion_tokens
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
       res.end(JSON.stringify(completionResponse, null, 2))
 
-      Logger.debug("OpenAI response sent", { 
-        requestId, 
+      Logger.debug("OpenAI response sent", {
+        requestId,
         contentLength: content.length,
         totalTokens: completionResponse.usage.total_tokens
       })
@@ -450,7 +450,7 @@ export class RequestHandler {
       let content = ""
       let isFirst = true
 
-      // Send initial message_start event
+      // send initial message_start event
       const messageStartEvent = {
         type: "message_start",
         message: {
@@ -466,7 +466,7 @@ export class RequestHandler {
       }
       res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
-      // Send content_block_start event
+      // send content_block_start event
       const contentBlockStartEvent = {
         type: "content_block_start",
         index: 0,
@@ -479,7 +479,7 @@ export class RequestHandler {
 
       for await (const chunk of response.text) {
         content += chunk
-                
+
         const contentBlockDeltaEvent = {
           type: "content_block_delta",
           index: 0,
@@ -492,14 +492,14 @@ export class RequestHandler {
         res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
       }
 
-      // Send content_block_stop event
+      // send content_block_stop event
       const contentBlockStopEvent = {
         type: "content_block_stop",
         index: 0
       }
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
 
-      // Send final message_stop event
+      // send final message_stop event
       const messageStopEvent = {
         type: "message_stop"
       }
@@ -556,8 +556,8 @@ export class RequestHandler {
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
       res.end(JSON.stringify(messageResponse, null, 2))
 
-      Logger.debug("Anthropic response sent", { 
-        requestId, 
+      Logger.debug("Anthropic response sent", {
+        requestId,
         contentLength: content.length,
         inputTokens: messageResponse.usage.input_tokens,
         outputTokens: messageResponse.usage.output_tokens
@@ -639,8 +639,8 @@ export class RequestHandler {
 
       req.on("data", chunk => {
         body += chunk
-                
-        // Limit body size to 10MB
+
+        // limit body size to 10mb
         if (body.length > 10 * 1024 * 1024) {
           reject(new Error("request body too large"))
           return
@@ -653,17 +653,17 @@ export class RequestHandler {
   }
 
   private estimateTokens(messages: any[]): number {
-    // Simple token estimation - roughly 4 characters per token
-    const text = messages.map(msg => 
-      typeof msg.content === "string" ? msg.content : 
-        Array.isArray(msg.content) ? msg.content.map((c: any) => c.text || "").join("") : 
+    // simple token estimation - roughly 4 characters per token
+    const text = messages.map(msg =>
+      typeof msg.content === "string" ? msg.content :
+        Array.isArray(msg.content) ? msg.content.map((c: any) => c.text || "").join("") :
           ""
     ).join("")
-        
+
     return Math.ceil(text.length / 4)
   }
 
   public dispose(): void {
-    // Cleanup any resources if needed
+    // cleanup any resources if needed
   }
 }

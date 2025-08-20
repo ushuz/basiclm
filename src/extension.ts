@@ -8,10 +8,10 @@ let statusBarItem: vscode.StatusBarItem
 export function activate(context: vscode.ExtensionContext) {
   Logger.info("BasicLM extension activating")
 
-  // Initialize server
+  // initialize server
   server = new LMAPIServer()
 
-  // Create status bar item
+  // create status bar item
   statusBarItem = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     100
@@ -19,10 +19,10 @@ export function activate(context: vscode.ExtensionContext) {
   statusBarItem.command = "basiclmapi.status"
   context.subscriptions.push(statusBarItem)
 
-  // Register commands
+  // register commands
   registerCommands(context)
 
-  // Auto-start if configured
+  // auto-start if configured
   const config = vscode.workspace.getConfiguration("basiclmapi")
   if (config.get<boolean>("autoStart", false)) {
     checkLanguageModelAccess().then(hasAccess => {
@@ -51,56 +51,56 @@ export function deactivate() {
 }
 
 function registerCommands(context: vscode.ExtensionContext) {
-  // Start server command
+  // start server command
   const startCommand = vscode.commands.registerCommand("basiclmapi.start", async () => {
     try {
       if (server.isRunning()) {
-        vscode.window.showWarningMessage("Server is already running")
+        vscode.window.showWarningMessage("BasicLM is already running")
         return
       }
 
       await server.start()
       updateStatusBar()
-      vscode.window.showInformationMessage("BasicLM Server started successfully")
+      vscode.window.showInformationMessage("BasicLM started successfully")
     } catch (error) {
-      const errorMessage = `Failed to start server: ${(error as Error).message}`
+      const errorMessage = `Failed to start BasicLM: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
       vscode.window.showErrorMessage(errorMessage)
     }
   })
 
-  // Stop server command
+  // stop server command
   const stopCommand = vscode.commands.registerCommand("basiclmapi.stop", async () => {
     try {
       if (!server.isRunning()) {
-        vscode.window.showWarningMessage("Server is not running")
+        vscode.window.showWarningMessage("BasicLM is not running")
         return
       }
 
       await server.stop()
       updateStatusBar()
-      vscode.window.showInformationMessage("BasicLM Server stopped")
+      vscode.window.showInformationMessage("BasicLM stopped")
     } catch (error) {
-      const errorMessage = `Failed to stop server: ${(error as Error).message}`
+      const errorMessage = `Failed to stop BasicLM: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
       vscode.window.showErrorMessage(errorMessage)
     }
   })
 
-  // Restart server command
+  // restart server command
   const restartCommand = vscode.commands.registerCommand("basiclmapi.restart", async () => {
     try {
       await server.restart()
       updateStatusBar()
-      vscode.window.showInformationMessage("BasicLM Server restarted")
+      vscode.window.showInformationMessage("BasicLM restarted")
     } catch (error) {
-      const errorMessage = `Failed to restart server: ${(error as Error).message}`
+      const errorMessage = `Failed to restart BasicLM: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
       vscode.window.showErrorMessage(errorMessage)
     }
   })
 
-  // Status command
+  // status command
   const statusCommand = vscode.commands.registerCommand("basiclmapi.status", async () => {
     showServerStatus()
   })
@@ -118,11 +118,11 @@ function updateStatusBar() {
 
   if (state.isRunning) {
     statusBarItem.text = `$(server) BasicLM :${state.port}`
-    statusBarItem.tooltip = `BasicLM Server running on http://${state.host}:${state.port}\nClick for details`
+    statusBarItem.tooltip = `BasicLM is running on http://${state.host}:${state.port}\nClick for details`
     statusBarItem.backgroundColor = undefined
   } else {
     statusBarItem.text = "$(server) BasicLM (stopped)"
-    statusBarItem.tooltip = "BasicLM Server is stopped\nClick to start"
+    statusBarItem.tooltip = "BasicLM is stopped\nClick to start"
     statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground")
   }
 
@@ -139,12 +139,12 @@ async function showServerStatus() {
     const items = [
       {
         label: "Stop Server",
-        description: "Stop the BasicLM server",
+        description: "Stop the BasicLM",
         action: "stop"
       },
       {
         label: "Restart Server",
-        description: "Restart the BasicLM server",
+        description: "Restart the BasicLM",
         action: "restart"
       },
       {
@@ -160,7 +160,7 @@ async function showServerStatus() {
     ]
 
     const selected = await vscode.window.showQuickPick(items, {
-      title: "BasicLM Server Status",
+      title: "BasicLM Status",
       placeHolder: `Running on http://${state.host}:${state.port} | Uptime: ${uptimeStr} | Requests: ${state.requestCount}`
     })
 
@@ -183,8 +183,8 @@ async function showServerStatus() {
     ]
 
     const selected = await vscode.window.showQuickPick(items, {
-      title: "BasicLM Server Status",
-      placeHolder: "Server is stopped"
+      title: "BasicLM Status",
+      placeHolder: "Stopped"
     })
 
     if (selected) {

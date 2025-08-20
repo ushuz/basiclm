@@ -21,13 +21,13 @@ export class LMAPIServer {
       errorCount: 0
     }
 
-    // Listen for configuration changes
+    // listen for configuration changes
     vscode.workspace.onDidChangeConfiguration(this.onConfigurationChanged.bind(this))
   }
 
   public async start(port?: number): Promise<void> {
     if (this.state.isRunning) {
-      throw new Error("server is already running")
+      throw new Error("BasicLM is already running")
     }
 
     const serverPort = port || this.config.port
@@ -37,7 +37,7 @@ export class LMAPIServer {
       try {
         this.server = http.createServer(this.handleRequest.bind(this))
 
-        // Configure server settings
+        // configure server settings
         this.server.keepAliveTimeout = 65000
         this.server.headersTimeout = 66000
         this.server.requestTimeout = 120000
@@ -48,7 +48,7 @@ export class LMAPIServer {
           this.state.host = serverHost
           this.state.startTime = new Date()
 
-          Logger.info("BasicLM server started", {
+          Logger.info("BasicLM started", {
             host: serverHost,
             port: serverPort,
             endpoints: {
@@ -62,13 +62,13 @@ export class LMAPIServer {
 
         this.server.on("error", (error: NodeJS.ErrnoException) => {
           this.state.isRunning = false
-                    
+
           if (error.code === "EADDRINUSE") {
             const message = `port ${serverPort} is already in use`
             Logger.error(message, error)
             reject(new Error(message))
           } else {
-            Logger.error("server startup error", error)
+            Logger.error("BasicLM startup error", error)
             reject(error)
           }
         })
@@ -92,11 +92,11 @@ export class LMAPIServer {
         this.state.host = undefined
         this.state.startTime = undefined
 
-        Logger.info("BasicLM server stopped")
+        Logger.info("BasicLM stopped")
         resolve()
       })
 
-      // Force close after timeout
+      // force close after timeout
       setTimeout(() => {
         this.server?.closeAllConnections?.()
         resolve()
@@ -134,17 +134,17 @@ export class LMAPIServer {
 
       Logger.debug(`request: ${method} ${url.pathname}`, { requestId })
 
-      // Add CORS headers
+      // add cors headers
       this.addCORSHeaders(res)
 
-      // Handle preflight requests
+      // handle preflight requests
       if (method === "OPTIONS") {
         res.writeHead(HTTP_STATUS.OK)
         res.end()
         return
       }
 
-      // Route request
+      // route request
       await this.routeRequest(url.pathname, method, req, res, requestId)
 
     } catch (error) {
@@ -238,10 +238,10 @@ export class LMAPIServer {
         new: newConfig
       })
 
-      // Restart server if critical settings changed
-      if (this.state.isRunning && 
+      // restart server if critical settings changed
+      if (this.state.isRunning &&
                 (oldConfig.port !== newConfig.port || oldConfig.host !== newConfig.host)) {
-                
+
         vscode.window.showInformationMessage(
           "Server configuration changed. Restart required.",
           "Restart Now"
