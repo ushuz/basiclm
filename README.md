@@ -46,18 +46,6 @@ A VS Code extension that bridges the VS Code Language Model API to OpenAI and An
 
 ## Configuration
 
-Configure via VS Code Settings (Ctrl+,) or settings.json:
-
-```json
-{
-  "basiclmapi.port": 8099,
-  "basiclmapi.host": "127.0.0.1",
-  "basiclmapi.autoStart": false,
-  "basiclmapi.enableLogging": true
-}
-```
-
-Configuration options:
 - `basiclmapi.port`: Server port (default: 8099)
 - `basiclmapi.host`: Server host (default: 127.0.0.1)
 - `basiclmapi.autoStart`: Auto-start server when VS Code starts
@@ -65,28 +53,17 @@ Configuration options:
 
 ## API Endpoints
 
-### OpenAI Chat Completions
 ```
-POST http://127.0.0.1:8099/v1/chat/completions
+POST /v1/chat/completions
 ```
-
-Compatible with OpenAI's chat completions API format.
-
-### Anthropic Messages
-```  
-POST http://127.0.0.1:8099/v1/messages
 ```
-
-Compatible with Anthropic's messages API format.
-
-### Models List
+POST /v1/messages
 ```
-GET http://127.0.0.1:8099/v1/models
 ```
-
-### Health Check
+GET /v1/models
 ```
-GET http://127.0.0.1:8099/health
+```
+GET /health
 ```
 
 ## Example Usage
