@@ -63,7 +63,6 @@ export class RequestHandler {
 
       // make request to vs code language model api
       const options = { tools: vsCodeTools }
-      Logger.debug("adding tools to request options", { toolCount: vsCodeTools.length, requestId })
       const token = new vscode.CancellationTokenSource().token
 
       try {
@@ -140,7 +139,6 @@ export class RequestHandler {
 
       // make request to vs code language model api
       const options = { tools: vsCodeTools }
-      Logger.debug("adding tools to request options", { toolCount: vsCodeTools.length, requestId })
       const token = new vscode.CancellationTokenSource().token
 
       try {
