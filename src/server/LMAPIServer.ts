@@ -27,7 +27,7 @@ export class LMAPIServer {
 
   public async start(port?: number): Promise<void> {
     if (this.state.isRunning) {
-      throw new Error("Server is already running")
+      throw new Error("server is already running")
     }
 
     const serverPort = port || this.config.port
@@ -48,7 +48,7 @@ export class LMAPIServer {
           this.state.host = serverHost
           this.state.startTime = new Date()
 
-          Logger.info("LM API Server started", {
+          Logger.info("BasicLM server started", {
             host: serverHost,
             port: serverPort,
             endpoints: {
@@ -64,17 +64,17 @@ export class LMAPIServer {
           this.state.isRunning = false
                     
           if (error.code === "EADDRINUSE") {
-            const message = `Port ${serverPort} is already in use`
+            const message = `port ${serverPort} is already in use`
             Logger.error(message, error)
             reject(new Error(message))
           } else {
-            Logger.error("Server startup error", error)
+            Logger.error("server startup error", error)
             reject(error)
           }
         })
 
       } catch (error) {
-        Logger.error("Failed to create server", error as Error)
+        Logger.error("failed to create server", error as Error)
         reject(error)
       }
     })
@@ -92,7 +92,7 @@ export class LMAPIServer {
         this.state.host = undefined
         this.state.startTime = undefined
 
-        Logger.info("LM API Server stopped")
+        Logger.info("BasicLM server stopped")
         resolve()
       })
 
@@ -132,7 +132,7 @@ export class LMAPIServer {
       const url = new URL(req.url || "/", `http://${hostHeader}`)
       const method = req.method || "GET"
 
-      Logger.debug(`Request: ${method} ${url.pathname}`, { requestId })
+      Logger.debug(`request: ${method} ${url.pathname}`, { requestId })
 
       // Add CORS headers
       this.addCORSHeaders(res)
@@ -149,14 +149,14 @@ export class LMAPIServer {
 
     } catch (error) {
       this.state.errorCount++
-      Logger.error("Request handling error", error as Error, { requestId })
+      Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal server error", requestId)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
       }
     } finally {
       const duration = Date.now() - startTime
-      Logger.debug(`Response: ${res.statusCode || 500}`, { requestId, duration: `${duration}ms` })
+      Logger.debug(`response: ${res.statusCode || 500}`, { requestId, duration: `${duration}ms` })
     }
   }
 
@@ -233,7 +233,7 @@ export class LMAPIServer {
 
       this.config = newConfig
 
-      Logger.info("Configuration changed", {
+      Logger.info("configuration changed", {
         old: oldConfig,
         new: newConfig
       })
@@ -248,7 +248,7 @@ export class LMAPIServer {
         ).then(selection => {
           if (selection === "Restart Now") {
             this.restart().catch(error => {
-              Logger.error("Failed to restart server after config change", error)
+              Logger.error("failed to restart server after config change", error)
             })
           }
         })
@@ -258,7 +258,7 @@ export class LMAPIServer {
 
   public dispose(): void {
     this.stop().catch(error => {
-      Logger.error("Error during server disposal", error)
+      Logger.error("error during server disposal", error)
     })
 
     this.requestHandler.dispose()
