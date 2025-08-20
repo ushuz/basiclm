@@ -380,6 +380,24 @@ export class RequestHandler {
     }))
   }
 
+  private extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): VSCodeToolCall[] {
+    // The VS Code Language Model API might use different property names
+    // Try common variations and provide defensive access
+    const responseAny = response as any
+    
+    const toolCalls = responseAny.toolCalls || 
+                     responseAny.tool_calls || 
+                     responseAny.functionCalls ||
+                     responseAny.function_calls ||
+                     []
+    
+    if (Array.isArray(toolCalls)) {
+      return toolCalls
+    }
+    
+    return []
+  }
+
   private async handleOpenAIStreamingResponse(
     response: vscode.LanguageModelChatResponse,
     res: http.ServerResponse,
@@ -418,7 +436,7 @@ export class RequestHandler {
       }
 
       // Check for tool calls after text processing is complete
-      const toolCalls = this.convertVSCodeToolCallsToOpenAI((response as any).toolCalls)
+      const toolCalls = this.convertVSCodeToolCallsToOpenAI(this.extractToolCallsFromVSCodeResponse(response))
       
       if (toolCalls.length > 0) {
         // Send tool calls in the final content chunk
@@ -490,7 +508,7 @@ export class RequestHandler {
       }
 
       // Check for tool calls in the response
-      const toolCalls = this.convertVSCodeToolCallsToOpenAI((response as any).toolCalls)
+      const toolCalls = this.convertVSCodeToolCallsToOpenAI(this.extractToolCallsFromVSCodeResponse(response))
       
       const message: any = {
         role: "assistant",
@@ -606,7 +624,7 @@ export class RequestHandler {
       blockIndex++
 
       // Check for tool calls and add them as additional content blocks
-      const toolCalls = this.convertVSCodeToolCallsToAnthropic((response as any).toolCalls)
+      const toolCalls = this.convertVSCodeToolCallsToAnthropic(this.extractToolCallsFromVSCodeResponse(response))
       
       for (const toolCall of toolCalls) {
         // Send tool use content block start event
@@ -674,7 +692,7 @@ export class RequestHandler {
       }
 
       // Check for tool calls in the response
-      const toolCalls = this.convertVSCodeToolCallsToAnthropic((response as any).toolCalls)
+      const toolCalls = this.convertVSCodeToolCallsToAnthropic(this.extractToolCallsFromVSCodeResponse(response))
       
       const responseContent: AnthropicContent[] = []
       
