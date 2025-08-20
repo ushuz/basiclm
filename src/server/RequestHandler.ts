@@ -249,23 +249,8 @@ export class RequestHandler {
     match = models.find(m => m.family && requestedModel.toLowerCase().includes(m.family.toLowerCase()))
     if (match) return match
 
-    // map common model names to families
-    const modelFamilyMap: { [key: string]: string } = {
-      "gpt-4": "gpt-4",
-      "gpt-3.5": "gpt-35-turbo",
-      "claude": "claude",
-      "gemini": "gemini"
-    }
-
-    for (const [pattern, family] of Object.entries(modelFamilyMap)) {
-      if (requestedModel.toLowerCase().includes(pattern)) {
-        match = models.find(m => m.family && m.family.toLowerCase().includes(family))
-        if (match) return match
-      }
-    }
-
-    // fallback to first available model
-    return models.length > 0 ? models[0] : null
+    // no match found
+    return null
   }
 
   private convertOpenAIMessagesToVSCode(messages: any[]): vscode.LanguageModelChatMessage[] {
