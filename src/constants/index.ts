@@ -48,9 +48,7 @@ export const SSE_HEADERS = {
 
 export const ERROR_CODES = {
   INVALID_REQUEST: "invalid_request_error",
-  AUTHENTICATION_ERROR: "authentication_error",
   PERMISSION_ERROR: "permission_error",
   NOT_FOUND_ERROR: "not_found_error",
-  RATE_LIMIT_ERROR: "rate_limit_error",
   API_ERROR: "api_error"
 } as const
