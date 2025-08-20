@@ -62,11 +62,8 @@ export class RequestHandler {
       Logger.debug("converted OpenAI tools", { toolCount: vsCodeTools.length, tools: vsCodeTools, requestId })
 
       // make request to vs code language model api
-      const options: vscode.LanguageModelChatRequestOptions = {}
-      if (vsCodeTools.length > 0) {
-        options.tools = vsCodeTools
-        Logger.debug("adding tools to request options", { toolCount: vsCodeTools.length, requestId })
-      }
+      const options = { tools: vsCodeTools }
+      Logger.debug("adding tools to request options", { toolCount: vsCodeTools.length, requestId })
       const token = new vscode.CancellationTokenSource().token
 
       try {
@@ -142,11 +139,8 @@ export class RequestHandler {
       Logger.debug("converted Anthropic tools", { toolCount: vsCodeTools.length, tools: vsCodeTools, requestId })
 
       // make request to vs code language model api
-      const options: vscode.LanguageModelChatRequestOptions = {}
-      if (vsCodeTools.length > 0) {
-        options.tools = vsCodeTools
-        Logger.debug("adding tools to request options", { toolCount: vsCodeTools.length, requestId })
-      }
+      const options = { tools: vsCodeTools }
+      Logger.debug("adding tools to request options", { toolCount: vsCodeTools.length, requestId })
       const token = new vscode.CancellationTokenSource().token
 
       try {
