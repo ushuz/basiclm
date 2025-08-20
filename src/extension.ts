@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (hasAccess) {
         vscode.commands.executeCommand("basiclmapi.start")
       } else {
-        Logger.warn("Auto-start skipped: Language Model access not available")
+        Logger.warn("auto-start skipped: Language Model access not available")
       }
     })
   }
@@ -241,7 +241,7 @@ async function checkLanguageModelAccess(): Promise<boolean> {
     const models = await vscode.lm.selectChatModels()
     return models.length > 0
   } catch (error) {
-    Logger.warn("Language model access check failed", { error: (error as Error).message })
+    Logger.warn("language model access check failed", { error: (error as Error).message })
     return false
   }
 }

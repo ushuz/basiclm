@@ -79,7 +79,7 @@ export class RequestHandler {
       }
 
     } catch (error) {
-      Logger.error("Error handling OpenAI chat completions", error as Error, { requestId })
+      Logger.error("error handling OpenAI chat completions", error as Error, { requestId })
             
       if (!res.headersSent) {
         this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId)
@@ -151,7 +151,7 @@ export class RequestHandler {
       }
 
     } catch (error) {
-      Logger.error("Error handling Anthropic messages", error as Error, { requestId })
+      Logger.error("error handling Anthropic messages", error as Error, { requestId })
             
       if (!res.headersSent) {
         this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId)
@@ -193,7 +193,7 @@ export class RequestHandler {
       Logger.debug("Models response sent", { modelCount: models.length, requestId })
 
     } catch (error) {
-      Logger.error("Error handling models request", error as Error, { requestId })
+      Logger.error("error handling models request", error as Error, { requestId })
       this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Failed to retrieve models", ERROR_CODES.API_ERROR, requestId)
     }
   }
@@ -235,7 +235,7 @@ export class RequestHandler {
       res.end(JSON.stringify(healthResponse, null, 2))
 
     } catch (error) {
-      Logger.error("Error handling health check", error as Error, { requestId })
+      Logger.error("error handling health check", error as Error, { requestId })
       this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Health check failed", ERROR_CODES.API_ERROR, requestId)
     }
   }
@@ -338,7 +338,7 @@ export class RequestHandler {
     res.writeHead(HTTP_STATUS.OK, SSE_HEADERS)
 
     try {
-      Logger.debug("Starting OpenAI streaming response", { requestId })
+      Logger.debug("starting OpenAI streaming response", { requestId })
 
       let content = ""
       let chunkIndex = 0
@@ -405,7 +405,7 @@ export class RequestHandler {
     requestId: string
   ): Promise<void> {
     try {
-      Logger.debug("Collecting OpenAI full response", { requestId })
+      Logger.debug("collecting OpenAI full response", { requestId })
 
       let content = ""
       for await (const chunk of response.text) {
@@ -445,7 +445,7 @@ export class RequestHandler {
       })
 
     } catch (error) {
-      Logger.error("Error collecting OpenAI response", error as Error, { requestId })
+      Logger.error("error collecting OpenAI response", error as Error, { requestId })
       throw error
     }
   }
@@ -460,7 +460,7 @@ export class RequestHandler {
     res.writeHead(HTTP_STATUS.OK, SSE_HEADERS)
 
     try {
-      Logger.debug("Starting Anthropic streaming response", { requestId })
+      Logger.debug("starting Anthropic streaming response", { requestId })
 
       let content = ""
       let isFirst = true
@@ -545,7 +545,7 @@ export class RequestHandler {
     requestId: string
   ): Promise<void> {
     try {
-      Logger.debug("Collecting Anthropic full response", { requestId })
+      Logger.debug("collecting Anthropic full response", { requestId })
 
       let content = ""
       for await (const chunk of response.text) {
@@ -579,7 +579,7 @@ export class RequestHandler {
       })
 
     } catch (error) {
-      Logger.error("Error collecting Anthropic response", error as Error, { requestId })
+      Logger.error("error collecting Anthropic response", error as Error, { requestId })
       throw error
     }
   }
@@ -645,7 +645,7 @@ export class RequestHandler {
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
     res.end(JSON.stringify(errorResponse, null, 2))
 
-    Logger.error(`Error response: ${statusCode}`, new Error(message), { type, requestId })
+    Logger.error(`error response: ${statusCode}`, new Error(message), { type, requestId })
   }
 
   private async readRequestBody(req: http.IncomingMessage): Promise<string> {
