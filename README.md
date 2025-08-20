@@ -50,12 +50,18 @@ Configure via VS Code Settings (Ctrl+,) or settings.json:
 
 ```json
 {
-  "basiclmapi.port": 8099,           // Server port (default: 8099)
-  "basiclmapi.host": "127.0.0.1",    // Server host (default: 127.0.0.1)
-  "basiclmapi.autoStart": false,     // Auto-start server when VS Code starts
-  "basiclmapi.enableLogging": true   // Enable detailed logging
+  "basiclmapi.port": 8099,
+  "basiclmapi.host": "127.0.0.1",
+  "basiclmapi.autoStart": false,
+  "basiclmapi.enableLogging": true
 }
 ```
+
+Configuration options:
+- `basiclmapi.port`: Server port (default: 8099)
+- `basiclmapi.host`: Server host (default: 127.0.0.1)
+- `basiclmapi.autoStart`: Auto-start server when VS Code starts
+- `basiclmapi.enableLogging`: Enable detailed logging
 
 ## API Endpoints
 
