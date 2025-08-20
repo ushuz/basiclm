@@ -48,7 +48,7 @@ export class LMAPIServer {
           this.state.host = serverHost
           this.state.startTime = new Date()
 
-          Logger.info("LM API Server started", {
+          Logger.info("BasicLM server started", {
             host: serverHost,
             port: serverPort,
             endpoints: {
@@ -92,7 +92,7 @@ export class LMAPIServer {
         this.state.host = undefined
         this.state.startTime = undefined
 
-        Logger.info("LM API Server stopped")
+        Logger.info("BasicLM server stopped")
         resolve()
       })
 
@@ -132,7 +132,7 @@ export class LMAPIServer {
       const url = new URL(req.url || "/", `http://${hostHeader}`)
       const method = req.method || "GET"
 
-      Logger.debug(`Request: ${method} ${url.pathname}`, { requestId })
+      Logger.debug(`request: ${method} ${url.pathname}`, { requestId })
 
       // Add CORS headers
       this.addCORSHeaders(res)
@@ -156,7 +156,7 @@ export class LMAPIServer {
       }
     } finally {
       const duration = Date.now() - startTime
-      Logger.debug(`Response: ${res.statusCode || 500}`, { requestId, duration: `${duration}ms` })
+      Logger.debug(`response: ${res.statusCode || 500}`, { requestId, duration: `${duration}ms` })
     }
   }
 

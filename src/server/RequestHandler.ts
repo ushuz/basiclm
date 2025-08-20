@@ -190,7 +190,7 @@ export class RequestHandler {
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
       res.end(JSON.stringify(modelsResponse, null, 2))
 
-      Logger.debug("Models response sent", { modelCount: models.length, requestId })
+      Logger.debug("models response sent", { modelCount: models.length, requestId })
 
     } catch (error) {
       Logger.error("error handling models request", error as Error, { requestId })
