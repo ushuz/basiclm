@@ -264,8 +264,8 @@ export class RequestHandler {
       }
     }
 
-    // fallback to first available model
-    return models.length > 0 ? models[0] : null
+    // no match found
+    return null
   }
 
   private convertOpenAIMessagesToVSCode(messages: any[]): vscode.LanguageModelChatMessage[] {
