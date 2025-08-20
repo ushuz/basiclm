@@ -1,0 +1,103 @@
+{
+  "name": "basiclmapi",
+  "displayName": "BasicLM",
+  "description": "Bridge VS Code Language Model API to OpenAI and Anthropic compatible HTTP endpoints",
+  "version": "0.1.0",
+  "publisher": "ushuz",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "language model",
+    "api",
+    "bridge",
+    "openai",
+    "anthropic"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "basiclmapi.start",
+        "title": "Start BasicLM Server",
+        "category": "BasicLM"
+      },
+      {
+        "command": "basiclmapi.stop",
+        "title": "Stop BasicLM Server",
+        "category": "BasicLM"
+      },
+      {
+        "command": "basiclmapi.restart",
+        "title": "Restart BasicLM Server",
+        "category": "BasicLM"
+      },
+      {
+        "command": "basiclmapi.status",
+        "title": "Show Server Status",
+        "category": "BasicLM"
+      }
+    ],
+    "configuration": {
+      "title": "BasicLM",
+      "properties": {
+        "basiclmapi.port": {
+          "type": "number",
+          "default": 8099,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "HTTP server port"
+        },
+        "basiclmapi.host": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "HTTP server host (127.0.0.1 for localhost only)"
+        },
+        "basiclmapi.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start server when VS Code starts"
+        },
+        "basiclmapi.enableLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable detailed logging"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "test-api": "node test/api-test.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.92.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "typescript": "~5.3.3",
+    "@vscode/vsce": "^2.15.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ushuz/basiclmapi"
+  },
+  "bugs": {
+    "url": "https://github.com/ushuz/basiclmapi/issues"
+  },
+  "homepage": "https://github.com/ushuz/basiclmapi#readme",
+  "license": "MIT"
+}
