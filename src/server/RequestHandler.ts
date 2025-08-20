@@ -380,22 +380,24 @@ export class RequestHandler {
     }))
   }
 
-  private extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): VSCodeToolCall[] {
-    // The VS Code Language Model API might use different property names
-    // Try common variations and provide defensive access
-    const responseAny = response as any
+  private async extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): Promise<VSCodeToolCall[]> {
+    const toolCalls: VSCodeToolCall[] = []
     
-    const toolCalls = responseAny.toolCalls || 
-                     responseAny.tool_calls || 
-                     responseAny.functionCalls ||
-                     responseAny.function_calls ||
-                     []
-    
-    if (Array.isArray(toolCalls)) {
-      return toolCalls
+    // Process the response stream to find LanguageModelToolCallPart objects
+    for await (const part of response.stream) {
+      // Check if this part is a tool call part
+      if (part && typeof part === "object" && "callId" in part && "name" in part) {
+        // This appears to be a LanguageModelToolCallPart
+        const toolCallPart = part as any
+        toolCalls.push({
+          name: toolCallPart.name,
+          arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
+          callId: toolCallPart.callId
+        })
+      }
     }
     
-    return []
+    return toolCalls
   }
 
   private async handleOpenAIStreamingResponse(
@@ -412,33 +414,50 @@ export class RequestHandler {
 
       let content = ""
       let chunkIndex = 0
+      const toolCalls: VSCodeToolCall[] = []
 
-      for await (const chunk of response.text) {
-        content += chunk
+      // Process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        if (part && typeof part === "object") {
+          // Check if this is a text part
+          if ("value" in part && typeof part.value === "string") {
+            const textChunk = part.value
+            content += textChunk
 
-        const streamChunk = {
-          id: `chatcmpl-${requestId}`,
-          object: "chat.completion.chunk",
-          created: Math.floor(Date.now() / 1000),
-          model: request.model,
-          choices: [{
-            index: 0,
-            delta: {
-              role: chunkIndex === 0 ? "assistant" : undefined,
-              content: chunk
-            },
-            finish_reason: null
-          }]
+            const streamChunk = {
+              id: `chatcmpl-${requestId}`,
+              object: "chat.completion.chunk",
+              created: Math.floor(Date.now() / 1000),
+              model: request.model,
+              choices: [{
+                index: 0,
+                delta: {
+                  role: chunkIndex === 0 ? "assistant" : undefined,
+                  content: textChunk
+                },
+                finish_reason: null
+              }]
+            }
+
+            res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
+            chunkIndex++
+          }
+          // Check if this is a tool call part
+          else if ("callId" in part && "name" in part) {
+            const toolCallPart = part as any
+            toolCalls.push({
+              name: toolCallPart.name,
+              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
+              callId: toolCallPart.callId
+            })
+          }
         }
-
-        res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
-        chunkIndex++
       }
 
-      // Check for tool calls after text processing is complete
-      const toolCalls = this.convertVSCodeToolCallsToOpenAI(this.extractToolCallsFromVSCodeResponse(response))
+      // Convert and send tool calls if any were found
+      const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
       
-      if (toolCalls.length > 0) {
+      if (openAIToolCalls.length > 0) {
         // Send tool calls in the final content chunk
         const toolCallChunk = {
           id: `chatcmpl-${requestId}`,
@@ -448,7 +467,7 @@ export class RequestHandler {
           choices: [{
             index: 0,
             delta: {
-              tool_calls: toolCalls
+              tool_calls: openAIToolCalls
             },
             finish_reason: null
           }]
@@ -465,7 +484,7 @@ export class RequestHandler {
         choices: [{
           index: 0,
           delta: {},
-          finish_reason: toolCalls.length > 0 ? "tool_calls" : "stop"
+          finish_reason: openAIToolCalls.length > 0 ? "tool_calls" : "stop"
         }]
       }
 
@@ -503,12 +522,29 @@ export class RequestHandler {
       Logger.debug("collecting OpenAI full response", { requestId })
 
       let content = ""
-      for await (const chunk of response.text) {
-        content += chunk
+      const toolCalls: VSCodeToolCall[] = []
+
+      // Process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        if (part && typeof part === "object") {
+          // Check if this is a text part
+          if ("value" in part && typeof part.value === "string") {
+            content += part.value
+          }
+          // Check if this is a tool call part
+          else if ("callId" in part && "name" in part) {
+            const toolCallPart = part as any
+            toolCalls.push({
+              name: toolCallPart.name,
+              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
+              callId: toolCallPart.callId
+            })
+          }
+        }
       }
 
-      // Check for tool calls in the response
-      const toolCalls = this.convertVSCodeToolCallsToOpenAI(this.extractToolCallsFromVSCodeResponse(response))
+      // Convert tool calls to OpenAI format
+      const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
       
       const message: any = {
         role: "assistant",
@@ -517,8 +553,8 @@ export class RequestHandler {
 
       let finishReason: string = "stop"
       
-      if (toolCalls.length > 0) {
-        message.tool_calls = toolCalls
+      if (openAIToolCalls.length > 0) {
+        message.tool_calls = openAIToolCalls
         finishReason = "tool_calls"
       }
 
@@ -572,6 +608,7 @@ export class RequestHandler {
 
       let content = ""
       let blockIndex = 0
+      const toolCalls: VSCodeToolCall[] = []
 
       // send initial message_start event
       const messageStartEvent = {
@@ -600,19 +637,35 @@ export class RequestHandler {
       }
       res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
-      for await (const chunk of response.text) {
-        content += chunk
+      // Process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        if (part && typeof part === "object") {
+          // Check if this is a text part
+          if ("value" in part && typeof part.value === "string") {
+            const textChunk = part.value
+            content += textChunk
 
-        const contentBlockDeltaEvent = {
-          type: "content_block_delta",
-          index: blockIndex,
-          delta: {
-            type: "text_delta",
-            text: chunk
+            const contentBlockDeltaEvent = {
+              type: "content_block_delta",
+              index: blockIndex,
+              delta: {
+                type: "text_delta",
+                text: textChunk
+              }
+            }
+
+            res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
+          }
+          // Check if this is a tool call part
+          else if ("callId" in part && "name" in part) {
+            const toolCallPart = part as any
+            toolCalls.push({
+              name: toolCallPart.name,
+              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
+              callId: toolCallPart.callId
+            })
           }
         }
-
-        res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
       }
 
       // send content_block_stop event for text
@@ -624,9 +677,9 @@ export class RequestHandler {
       blockIndex++
 
       // Check for tool calls and add them as additional content blocks
-      const toolCalls = this.convertVSCodeToolCallsToAnthropic(this.extractToolCallsFromVSCodeResponse(response))
+      const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
       
-      for (const toolCall of toolCalls) {
+      for (const toolCall of anthropicToolCalls) {
         // Send tool use content block start event
         const toolBlockStartEvent = {
           type: "content_block_start",
@@ -658,7 +711,7 @@ export class RequestHandler {
       Logger.debug("Anthropic streaming response completed", { 
         requestId, 
         contentLength: content.length,
-        toolCallsCount: toolCalls.length 
+        toolCallsCount: anthropicToolCalls.length 
       })
 
     } catch (error) {
@@ -687,12 +740,29 @@ export class RequestHandler {
       Logger.debug("collecting Anthropic full response", { requestId })
 
       let content = ""
-      for await (const chunk of response.text) {
-        content += chunk
+      const toolCalls: VSCodeToolCall[] = []
+
+      // Process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        if (part && typeof part === "object") {
+          // Check if this is a text part
+          if ("value" in part && typeof part.value === "string") {
+            content += part.value
+          }
+          // Check if this is a tool call part
+          else if ("callId" in part && "name" in part) {
+            const toolCallPart = part as any
+            toolCalls.push({
+              name: toolCallPart.name,
+              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
+              callId: toolCallPart.callId
+            })
+          }
+        }
       }
 
-      // Check for tool calls in the response
-      const toolCalls = this.convertVSCodeToolCallsToAnthropic(this.extractToolCallsFromVSCodeResponse(response))
+      // Convert tool calls to Anthropic format
+      const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
       
       const responseContent: AnthropicContent[] = []
       
@@ -705,10 +775,10 @@ export class RequestHandler {
       }
       
       // Add tool use content if present
-      responseContent.push(...toolCalls)
+      responseContent.push(...anthropicToolCalls)
       
       let stopReason: string = "end_turn"
-      if (toolCalls.length > 0) {
+      if (anthropicToolCalls.length > 0) {
         stopReason = "tool_use"
       }
 
@@ -733,7 +803,7 @@ export class RequestHandler {
         contentLength: content.length,
         inputTokens: messageResponse.usage.input_tokens,
         outputTokens: messageResponse.usage.output_tokens,
-        toolCallsCount: toolCalls.length
+        toolCallsCount: anthropicToolCalls.length
       })
 
     } catch (error) {
