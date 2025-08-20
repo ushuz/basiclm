@@ -9,7 +9,10 @@ import {
   ServerState,
   ErrorResponse,
   OpenAITool,
-  AnthropicTool
+  AnthropicTool,
+  VSCodeToolCall,
+  OpenAIToolCall,
+  AnthropicContent
 } from "../types"
 import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
 
@@ -349,6 +352,34 @@ export class RequestHandler {
     }))
   }
 
+  private convertVSCodeToolCallsToOpenAI(toolCalls?: VSCodeToolCall[]): OpenAIToolCall[] {
+    if (!toolCalls || !Array.isArray(toolCalls)) {
+      return []
+    }
+
+    return toolCalls.map(call => ({
+      id: call.callId,
+      type: "function" as const,
+      function: {
+        name: call.name,
+        arguments: call.arguments
+      }
+    }))
+  }
+
+  private convertVSCodeToolCallsToAnthropic(toolCalls?: VSCodeToolCall[]): AnthropicContent[] {
+    if (!toolCalls || !Array.isArray(toolCalls)) {
+      return []
+    }
+
+    return toolCalls.map(call => ({
+      type: "tool_use" as const,
+      id: call.callId,
+      name: call.name,
+      input: JSON.parse(call.arguments || "{}")
+    }))
+  }
+
   private async handleOpenAIStreamingResponse(
     response: vscode.LanguageModelChatResponse,
     res: http.ServerResponse,
@@ -386,6 +417,27 @@ export class RequestHandler {
         chunkIndex++
       }
 
+      // Check for tool calls after text processing is complete
+      const toolCalls = this.convertVSCodeToolCallsToOpenAI((response as any).toolCalls)
+      
+      if (toolCalls.length > 0) {
+        // Send tool calls in the final content chunk
+        const toolCallChunk = {
+          id: `chatcmpl-${requestId}`,
+          object: "chat.completion.chunk",
+          created: Math.floor(Date.now() / 1000),
+          model: request.model,
+          choices: [{
+            index: 0,
+            delta: {
+              tool_calls: toolCalls
+            },
+            finish_reason: null
+          }]
+        }
+        res.write(`data: ${JSON.stringify(toolCallChunk)}\n\n`)
+      }
+
       // send final chunk
       const finalChunk = {
         id: `chatcmpl-${requestId}`,
@@ -395,14 +447,18 @@ export class RequestHandler {
         choices: [{
           index: 0,
           delta: {},
-          finish_reason: "stop"
+          finish_reason: toolCalls.length > 0 ? "tool_calls" : "stop"
         }]
       }
 
       res.write(`data: ${JSON.stringify(finalChunk)}\n\n`)
       res.write("data: [DONE]\n\n")
 
-      Logger.debug("OpenAI streaming response completed", { requestId, contentLength: content.length })
+      Logger.debug("OpenAI streaming response completed", { 
+        requestId, 
+        contentLength: content.length,
+        toolCallsCount: toolCalls.length 
+      })
 
     } catch (error) {
       Logger.error("OpenAI streaming error", error as Error, { requestId })
@@ -433,6 +489,21 @@ export class RequestHandler {
         content += chunk
       }
 
+      // Check for tool calls in the response
+      const toolCalls = this.convertVSCodeToolCallsToOpenAI((response as any).toolCalls)
+      
+      const message: any = {
+        role: "assistant",
+        content: content || null
+      }
+
+      let finishReason: string = "stop"
+      
+      if (toolCalls.length > 0) {
+        message.tool_calls = toolCalls
+        finishReason = "tool_calls"
+      }
+
       const completionResponse: OpenAIChatCompletionResponse = {
         id: `chatcmpl-${requestId}`,
         object: "chat.completion",
@@ -440,11 +511,8 @@ export class RequestHandler {
         model: request.model,
         choices: [{
           index: 0,
-          message: {
-            role: "assistant",
-            content: content
-          },
-          finish_reason: "stop"
+          message: message,
+          finish_reason: finishReason as any
         }],
         usage: {
           prompt_tokens: this.estimateTokens(request.messages),
@@ -462,7 +530,8 @@ export class RequestHandler {
       Logger.debug("OpenAI response sent", {
         requestId,
         contentLength: content.length,
-        totalTokens: completionResponse.usage.total_tokens
+        totalTokens: completionResponse.usage.total_tokens,
+        toolCallsCount: toolCalls.length
       })
 
     } catch (error) {
@@ -484,7 +553,7 @@ export class RequestHandler {
       Logger.debug("starting Anthropic streaming response", { requestId })
 
       let content = ""
-      let isFirst = true
+      let blockIndex = 0
 
       // send initial message_start event
       const messageStartEvent = {
@@ -502,10 +571,10 @@ export class RequestHandler {
       }
       res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
-      // send content_block_start event
+      // send content_block_start event for text
       const contentBlockStartEvent = {
         type: "content_block_start",
-        index: 0,
+        index: blockIndex,
         content_block: {
           type: "text",
           text: ""
@@ -518,7 +587,7 @@ export class RequestHandler {
 
         const contentBlockDeltaEvent = {
           type: "content_block_delta",
-          index: 0,
+          index: blockIndex,
           delta: {
             type: "text_delta",
             text: chunk
@@ -528,12 +597,39 @@ export class RequestHandler {
         res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
       }
 
-      // send content_block_stop event
+      // send content_block_stop event for text
       const contentBlockStopEvent = {
         type: "content_block_stop",
-        index: 0
+        index: blockIndex
       }
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
+      blockIndex++
+
+      // Check for tool calls and add them as additional content blocks
+      const toolCalls = this.convertVSCodeToolCallsToAnthropic((response as any).toolCalls)
+      
+      for (const toolCall of toolCalls) {
+        // Send tool use content block start event
+        const toolBlockStartEvent = {
+          type: "content_block_start",
+          index: blockIndex,
+          content_block: {
+            type: "tool_use",
+            id: toolCall.id,
+            name: toolCall.name,
+            input: toolCall.input
+          }
+        }
+        res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
+
+        // Send tool use content block stop event
+        const toolBlockStopEvent = {
+          type: "content_block_stop",
+          index: blockIndex
+        }
+        res.write(`data: ${JSON.stringify(toolBlockStopEvent)}\n\n`)
+        blockIndex++
+      }
 
       // send final message_stop event
       const messageStopEvent = {
@@ -541,7 +637,11 @@ export class RequestHandler {
       }
       res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
-      Logger.debug("Anthropic streaming response completed", { requestId, contentLength: content.length })
+      Logger.debug("Anthropic streaming response completed", { 
+        requestId, 
+        contentLength: content.length,
+        toolCallsCount: toolCalls.length 
+      })
 
     } catch (error) {
       Logger.error("Anthropic streaming error", error as Error, { requestId })
@@ -573,16 +673,34 @@ export class RequestHandler {
         content += chunk
       }
 
+      // Check for tool calls in the response
+      const toolCalls = this.convertVSCodeToolCallsToAnthropic((response as any).toolCalls)
+      
+      const responseContent: AnthropicContent[] = []
+      
+      // Add text content if present
+      if (content) {
+        responseContent.push({
+          type: "text",
+          text: content
+        })
+      }
+      
+      // Add tool use content if present
+      responseContent.push(...toolCalls)
+      
+      let stopReason: string = "end_turn"
+      if (toolCalls.length > 0) {
+        stopReason = "tool_use"
+      }
+
       const messageResponse: AnthropicMessageResponse = {
         id: `msg_${requestId}`,
         type: "message",
         role: "assistant",
-        content: [{
-          type: "text",
-          text: content
-        }],
+        content: responseContent,
         model: request.model,
-        stop_reason: "end_turn",
+        stop_reason: stopReason as any,
         usage: {
           input_tokens: this.estimateTokens(request.messages),
           output_tokens: this.estimateTokens([{ role: "assistant", content: content }])
@@ -596,7 +714,8 @@ export class RequestHandler {
         requestId,
         contentLength: content.length,
         inputTokens: messageResponse.usage.input_tokens,
-        outputTokens: messageResponse.usage.output_tokens
+        outputTokens: messageResponse.usage.output_tokens,
+        toolCallsCount: toolCalls.length
       })
 
     } catch (error) {
