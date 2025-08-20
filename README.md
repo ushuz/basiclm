@@ -13,41 +13,57 @@ A VS Code extension that bridges the VS Code Language Model API to OpenAI and An
 
 ## Installation
 
-1. Install the extension in VS Code
-2. Ensure you have GitHub Copilot enabled and working
-3. Start the server using Command Palette: "BasicLM: Start BasicLM Server"
+### Install as VS Code Extension
+
+1. **Package the extension:**
+   ```bash
+   npm run package
+   ```
+   This creates a `.vsix` file.
+
+2. **Install in VS Code:**
+   - Open VS Code
+   - Go to Extensions (Ctrl+Shift+X)
+   - Click the "..." menu → "Install from VSIX..."
+   - Select the generated `.vsix` file
+
+3. **Prerequisites:**
+   - Ensure GitHub Copilot extension is installed and active
+   - Have a valid GitHub Copilot subscription
+   - VS Code 1.92.0 or higher
+
+### Using the Extension
+
+1. **Start the server:**
+   - Open Command Palette (Ctrl+Shift+P)
+   - Run "BasicLM: Start BasicLM Server"
+   - Check status bar for server status
+
+2. **Test the endpoints:**
+   ```bash
+   npm run test-api
+   ```
 
 ## Configuration
 
 - `basiclmapi.port`: Server port (default: 8099)
-- `basiclmapi.host`: Server host (default: 127.0.0.1) 
+- `basiclmapi.host`: Server host (default: 127.0.0.1)
 - `basiclmapi.autoStart`: Auto-start server when VS Code starts
 - `basiclmapi.enableLogging`: Enable detailed logging
 
 ## API Endpoints
 
-### OpenAI Chat Completions
 ```
-POST http://127.0.0.1:8099/v1/chat/completions
+POST /v1/chat/completions
 ```
-
-Compatible with OpenAI's chat completions API format.
-
-### Anthropic Messages
-```  
-POST http://127.0.0.1:8099/v1/messages
 ```
-
-Compatible with Anthropic's messages API format.
-
-### Models List
+POST /v1/messages
 ```
-GET http://127.0.0.1:8099/v1/models
 ```
-
-### Health Check
+GET /v1/models
 ```
-GET http://127.0.0.1:8099/health
+```
+GET /health
 ```
 
 ## Example Usage
@@ -57,7 +73,7 @@ GET http://127.0.0.1:8099/health
 curl -X POST http://127.0.0.1:8099/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-4",
+    "model": "gpt-5",
     "messages": [
       {"role": "user", "content": "Hello!"}
     ]
@@ -69,7 +85,7 @@ curl -X POST http://127.0.0.1:8099/v1/chat/completions \
 curl -X POST http://127.0.0.1:8099/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3-sonnet-20240229",
+    "model": "claude-sonnet-4",
     "max_tokens": 100,
     "messages": [
       {"role": "user", "content": "Hello!"}
@@ -90,6 +106,23 @@ npm install
 npm run compile
 npm run lint
 ```
+
+## Troubleshooting
+
+1. **Server won't start:**
+   - Check if GitHub Copilot is working in VS Code
+   - Verify port 8099 is not in use
+   - Check Output panel "BasicLM" for logs
+
+2. **No models available:**
+   - Ensure GitHub Copilot subscription is active
+   - Try restarting VS Code
+   - Check Copilot status in VS Code
+
+3. **API calls fail:**
+   - Verify server is running (check status bar)
+   - Check endpoint URLs are correct
+   - Review logs in Output panel
 
 ## License
 
