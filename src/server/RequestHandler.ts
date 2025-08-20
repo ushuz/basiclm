@@ -56,6 +56,7 @@ export class RequestHandler {
 
       // convert openai messages to vs code format
       const vsCodeMessages = this.convertOpenAIMessagesToVSCode(request.messages)
+      Logger.debug("converted OpenAI messages", { messageCount: vsCodeMessages.length, messages: vsCodeMessages, requestId })
 
       // convert tools to vs code format
       const vsCodeTools = this.convertOpenAIToolsToVSCode(request.tools)
@@ -132,6 +133,7 @@ export class RequestHandler {
 
       // convert anthropic messages to vs code format
       const vsCodeMessages = this.convertAnthropicMessagesToVSCode(request.messages, request.system)
+      Logger.debug("converted Anthropic messages", { messageCount: vsCodeMessages.length, messages: vsCodeMessages, requestId })
 
       // convert tools to vs code format
       const vsCodeTools = this.convertAnthropicToolsToVSCode(request.tools)
