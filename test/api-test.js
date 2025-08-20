@@ -82,7 +82,7 @@ async function testOpenAI() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         }, {
-            model: 'gpt-4',
+            model: 'gpt-5',
             messages: [
                 { role: 'user', content: 'Say "Hello from OpenAI endpoint!"' }
             ],
@@ -110,7 +110,7 @@ async function testAnthropic() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         }, {
-            model: 'claude-3-sonnet-20240229',
+            model: 'claude-sonnet-4',
             max_tokens: 50,
             messages: [
                 { role: 'user', content: 'Say "Hello from Anthropic endpoint!"' }
