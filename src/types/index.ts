@@ -27,6 +27,7 @@ export interface OpenAIChatCompletionRequest {
   frequency_penalty?: number
   logit_bias?: Record<string, number>
   user?: string
+  tools?: OpenAITool[]
 }
 
 export interface OpenAIMessage {
@@ -77,6 +78,7 @@ export interface AnthropicMessageRequest {
   stream?: boolean
   stop_sequences?: string[]
   system?: string
+  tools?: AnthropicTool[]
 }
 
 export interface AnthropicMessage {
@@ -115,4 +117,19 @@ export interface ErrorResponse {
     param?: string
     code?: string
   }
+}
+
+export interface OpenAITool {
+  type: "function"
+  function: {
+    name: string
+    description: string
+    parameters?: object
+  }
+}
+
+export interface AnthropicTool {
+  name: string
+  description: string
+  input_schema?: object
 }
