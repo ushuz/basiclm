@@ -128,6 +128,97 @@ async function testAnthropic() {
     }
 }
 
+async function testOpenAIWithTools() {
+    console.log('\nTesting OpenAI endpoint with tools...');
+    try {
+        const response = await makeRequest({
+            hostname: '127.0.0.1',
+            port: 8099,
+            path: '/v1/chat/completions',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }, {
+            model: 'gpt-5',
+            messages: [
+                { role: 'user', content: 'What tools are available to you?' }
+            ],
+            max_tokens: 100,
+            tools: [
+                {
+                    type: 'function',
+                    function: {
+                        name: 'get_weather',
+                        description: 'Get current weather information for a location',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                location: {
+                                    type: 'string',
+                                    description: 'The city and state/country'
+                                }
+                            },
+                            required: ['location']
+                        }
+                    }
+                }
+            ]
+        });
+        
+        console.log('OpenAI with Tools Status:', response.statusCode);
+        if (response.body.choices) {
+            console.log('OpenAI with Tools Response:', response.body.choices[0].message.content);
+        } else {
+            console.log('OpenAI with Tools Error:', response.body);
+        }
+    } catch (error) {
+        console.error('OpenAI with tools test failed:', error.message);
+    }
+}
+
+async function testAnthropicWithTools() {
+    console.log('\nTesting Anthropic endpoint with tools...');
+    try {
+        const response = await makeRequest({
+            hostname: '127.0.0.1',
+            port: 8099,
+            path: '/v1/messages',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }, {
+            model: 'claude-sonnet-4',
+            max_tokens: 100,
+            messages: [
+                { role: 'user', content: 'What tools are available to you?' }
+            ],
+            tools: [
+                {
+                    name: 'calculate',
+                    description: 'Perform mathematical calculations',
+                    input_schema: {
+                        type: 'object',
+                        properties: {
+                            expression: {
+                                type: 'string',
+                                description: 'Mathematical expression to evaluate'
+                            }
+                        },
+                        required: ['expression']
+                    }
+                }
+            ]
+        });
+        
+        console.log('Anthropic with Tools Status:', response.statusCode);
+        if (response.body.content) {
+            console.log('Anthropic with Tools Response:', response.body.content[0].text);
+        } else {
+            console.log('Anthropic with Tools Error:', response.body);
+        }
+    } catch (error) {
+        console.error('Anthropic with tools test failed:', error.message);
+    }
+}
+
 async function runTests() {
     console.log('Starting API tests...');
     console.log('Make sure the VS Code extension server is running first!\n');
@@ -136,6 +227,8 @@ async function runTests() {
     await testModels();
     await testOpenAI();
     await testAnthropic();
+    await testOpenAIWithTools();
+    await testAnthropicWithTools();
     
     console.log('\nTests completed!');
 }

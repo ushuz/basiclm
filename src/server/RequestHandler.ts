@@ -7,7 +7,9 @@ import {
   AnthropicMessageRequest,
   AnthropicMessageResponse,
   ServerState,
-  ErrorResponse
+  ErrorResponse,
+  OpenAITool,
+  AnthropicTool
 } from "../types"
 import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
 
@@ -54,9 +56,14 @@ export class RequestHandler {
 
       // convert openai messages to vs code format
       const vsCodeMessages = this.convertOpenAIMessagesToVSCode(request.messages)
+      Logger.debug("converted OpenAI messages", { messageCount: vsCodeMessages.length, messages: vsCodeMessages, requestId })
+
+      // convert tools to vs code format
+      const vsCodeTools = this.convertOpenAIToolsToVSCode(request.tools)
+      Logger.debug("converted OpenAI tools", { toolCount: vsCodeTools.length, tools: vsCodeTools, requestId })
 
       // make request to vs code language model api
-      const options = {}
+      const options = { tools: vsCodeTools }
       const token = new vscode.CancellationTokenSource().token
 
       try {
@@ -126,9 +133,14 @@ export class RequestHandler {
 
       // convert anthropic messages to vs code format
       const vsCodeMessages = this.convertAnthropicMessagesToVSCode(request.messages, request.system)
+      Logger.debug("converted Anthropic messages", { messageCount: vsCodeMessages.length, messages: vsCodeMessages, requestId })
+
+      // convert tools to vs code format
+      const vsCodeTools = this.convertAnthropicToolsToVSCode(request.tools)
+      Logger.debug("converted Anthropic tools", { toolCount: vsCodeTools.length, tools: vsCodeTools, requestId })
 
       // make request to vs code language model api
-      const options = {}
+      const options = { tools: vsCodeTools }
       const token = new vscode.CancellationTokenSource().token
 
       try {
@@ -311,6 +323,30 @@ export class RequestHandler {
     })
 
     return vsCodeMessages
+  }
+
+  private convertOpenAIToolsToVSCode(tools?: OpenAITool[]): vscode.LanguageModelChatTool[] {
+    if (!tools || !Array.isArray(tools)) {
+      return []
+    }
+
+    return tools.map(tool => ({
+      name: tool.function.name,
+      description: tool.function.description,
+      inputSchema: tool.function.parameters
+    }))
+  }
+
+  private convertAnthropicToolsToVSCode(tools?: AnthropicTool[]): vscode.LanguageModelChatTool[] {
+    if (!tools || !Array.isArray(tools)) {
+      return []
+    }
+
+    return tools.map(tool => ({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.input_schema
+    }))
   }
 
   private async handleOpenAIStreamingResponse(
