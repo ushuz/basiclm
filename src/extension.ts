@@ -55,7 +55,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   const startCommand = vscode.commands.registerCommand("basiclmapi.start", async () => {
     try {
       if (server.isRunning()) {
-        vscode.window.showWarningMessage("Server is already running")
+        vscode.window.showWarningMessage("server is already running")
         return
       }
 
@@ -73,7 +73,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   const stopCommand = vscode.commands.registerCommand("basiclmapi.stop", async () => {
     try {
       if (!server.isRunning()) {
-        vscode.window.showWarningMessage("Server is not running")
+        vscode.window.showWarningMessage("server is not running")
         return
       }
 

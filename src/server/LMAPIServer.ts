@@ -27,7 +27,7 @@ export class LMAPIServer {
 
   public async start(port?: number): Promise<void> {
     if (this.state.isRunning) {
-      throw new Error("Server is already running")
+      throw new Error("server is already running")
     }
 
     const serverPort = port || this.config.port
@@ -64,7 +64,7 @@ export class LMAPIServer {
           this.state.isRunning = false
                     
           if (error.code === "EADDRINUSE") {
-            const message = `Port ${serverPort} is already in use`
+            const message = `port ${serverPort} is already in use`
             Logger.error(message, error)
             reject(new Error(message))
           } else {
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal server error", requestId)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
       }
     } finally {
       const duration = Date.now() - startTime

@@ -82,7 +82,7 @@ export class RequestHandler {
       Logger.error("error handling OpenAI chat completions", error as Error, { requestId })
             
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
       }
     }
   }
@@ -154,7 +154,7 @@ export class RequestHandler {
       Logger.error("error handling Anthropic messages", error as Error, { requestId })
             
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Request processing failed", ERROR_CODES.API_ERROR, requestId)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
       }
     }
   }
@@ -194,7 +194,7 @@ export class RequestHandler {
 
     } catch (error) {
       Logger.error("error handling models request", error as Error, { requestId })
-      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Failed to retrieve models", ERROR_CODES.API_ERROR, requestId)
+      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "failed to retrieve models", ERROR_CODES.API_ERROR, requestId)
     }
   }
 
@@ -236,7 +236,7 @@ export class RequestHandler {
 
     } catch (error) {
       Logger.error("error handling health check", error as Error, { requestId })
-      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Health check failed", ERROR_CODES.API_ERROR, requestId)
+      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "health check failed", ERROR_CODES.API_ERROR, requestId)
     }
   }
 
@@ -387,7 +387,7 @@ export class RequestHandler {
       Logger.error("OpenAI streaming error", error as Error, { requestId })
       const errorEvent = {
         error: {
-          message: "Stream processing error",
+          message: "stream processing error",
           type: ERROR_CODES.API_ERROR
         }
       }
@@ -527,7 +527,7 @@ export class RequestHandler {
       const errorEvent = {
         type: "error",
         error: {
-          message: "Stream processing error",
+          message: "stream processing error",
           type: ERROR_CODES.API_ERROR
         }
       }
@@ -597,27 +597,27 @@ export class RequestHandler {
       case "NoPermissions":
         statusCode = HTTP_STATUS.FORBIDDEN
         errorCode = ERROR_CODES.PERMISSION_ERROR
-        message = "Permission denied for language model access"
+        message = "permission denied for language model access"
         break
       case "Blocked":
         statusCode = HTTP_STATUS.FORBIDDEN
         errorCode = ERROR_CODES.PERMISSION_ERROR
-        message = "Request blocked by content filter"
+        message = "request blocked by content filter"
         break
       case "NotFound":
         statusCode = HTTP_STATUS.NOT_FOUND
         errorCode = ERROR_CODES.NOT_FOUND_ERROR
-        message = "Language model not found"
+        message = "language model not found"
         break
       case "ContextLengthExceeded":
         statusCode = HTTP_STATUS.BAD_REQUEST
         errorCode = ERROR_CODES.INVALID_REQUEST
-        message = "Request exceeds context length limit"
+        message = "request exceeds context length limit"
         break
       default:
         statusCode = HTTP_STATUS.BAD_GATEWAY
         errorCode = ERROR_CODES.API_ERROR
-        message = `Language model error: ${error.message}`
+        message = `language model error: ${error.message}`
     }
 
     this.sendError(res, statusCode, message, errorCode, requestId)
@@ -657,7 +657,7 @@ export class RequestHandler {
                 
         // Limit body size to 10MB
         if (body.length > 10 * 1024 * 1024) {
-          reject(new Error("Request body too large"))
+          reject(new Error("request body too large"))
           return
         }
       })
