@@ -185,7 +185,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, pathname)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
     }
   }
 
@@ -199,8 +199,7 @@ export class LMAPIServer {
     res: http.ServerResponse, 
     statusCode: number, 
     message: string, 
-    requestId?: string, 
-    pathname?: string
+    requestId?: string
   ): void {
     if (res.headersSent) {
       return
