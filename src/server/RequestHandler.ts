@@ -34,7 +34,18 @@ export class RequestHandler {
 
       Logger.debug("processing openai chat completions request", { requestId })
 
-      const body = await this.readRequestBody(req)
+      let body: string
+      try {
+        body = await this.readRequestBody(req)
+      } catch (error) {
+        if ((error as Error).message === "request entity too large") {
+          this.sendError(res, HTTP_STATUS.REQUEST_TOO_LARGE, "request entity too large", ERROR_CODES.REQUEST_TOO_LARGE, requestId, ApiType.OPENAI)
+        } else {
+          this.sendError(res, HTTP_STATUS.BAD_REQUEST, "failed to read request body", ERROR_CODES.INVALID_REQUEST, requestId, ApiType.OPENAI)
+        }
+        return
+      }
+      
       const request: OpenAIChatCompletionRequest = JSON.parse(body)
 
       // validate request
@@ -111,7 +122,18 @@ export class RequestHandler {
 
       Logger.debug("processing anthropic messages request", { requestId })
 
-      const body = await this.readRequestBody(req)
+      let body: string
+      try {
+        body = await this.readRequestBody(req)
+      } catch (error) {
+        if ((error as Error).message === "request entity too large") {
+          this.sendError(res, HTTP_STATUS.REQUEST_TOO_LARGE, "request entity too large", ERROR_CODES.REQUEST_TOO_LARGE, requestId, ApiType.ANTHROPIC)
+        } else {
+          this.sendError(res, HTTP_STATUS.BAD_REQUEST, "failed to read request body", ERROR_CODES.INVALID_REQUEST, requestId, ApiType.ANTHROPIC)
+        }
+        return
+      }
+      
       const request: AnthropicMessageRequest = JSON.parse(body)
 
       // validate request
@@ -267,6 +289,14 @@ export class RequestHandler {
 
     // no match found
     return null
+  }
+
+  private getRateLimitErrorType(apiType?: ApiType): string {
+    if (apiType === ApiType.ANTHROPIC) {
+      return ERROR_CODES.RATE_LIMIT_ERROR
+    } else {
+      return ERROR_CODES.RATE_LIMIT_EXCEEDED
+    }
   }
 
   private convertOpenAIMessagesToVSCode(messages: any[]): vscode.LanguageModelChatMessage[] {
@@ -853,7 +883,7 @@ export class RequestHandler {
 
         // limit body size to 10mb
         if (body.length > 10 * 1024 * 1024) {
-          reject(new Error("request body too large"))
+          reject(new Error("request entity too large"))
           return
         }
       })

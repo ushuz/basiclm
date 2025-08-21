@@ -20,6 +20,7 @@ export const HTTP_STATUS = {
   NOT_FOUND: 404,
   METHOD_NOT_ALLOWED: 405,
   REQUEST_TIMEOUT: 408,
+  REQUEST_TOO_LARGE: 413,
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
   BAD_GATEWAY: 502,
@@ -48,7 +49,12 @@ export const SSE_HEADERS = {
 
 export const ERROR_CODES = {
   INVALID_REQUEST: "invalid_request_error",
+  AUTHENTICATION_ERROR: "authentication_error",
   PERMISSION_ERROR: "permission_error",
   NOT_FOUND_ERROR: "not_found_error",
+  REQUEST_TOO_LARGE: "request_too_large",
+  RATE_LIMIT_EXCEEDED: "rate_limit_exceeded",
+  RATE_LIMIT_ERROR: "rate_limit_error",
   API_ERROR: "api_error",
+  OVERLOADED_ERROR: "overloaded_error",
 } as const

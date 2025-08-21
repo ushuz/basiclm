@@ -37,6 +37,16 @@ Run with: `npm run test-error-compliance`
 }
 ```
 
+**Supported OpenAI Error Types:**
+- `invalid_request_error` - Invalid request (400)
+- `authentication_error` - Invalid authentication (401)
+- `permission_error` - Permission denied (403)
+- `not_found_error` - Not found (404)
+- `request_too_large` - Request entity too large (413)
+- `rate_limit_exceeded` - Rate limit exceeded (429)
+- `api_error` - Internal server error (500)
+- `overloaded_error` - Server overloaded (503)
+
 ### Anthropic Format
 ```json
 {
@@ -47,6 +57,17 @@ Run with: `npm run test-error-compliance`
   }
 }
 ```
+
+**Supported Anthropic Error Types:**
+- `invalid_request_error` - Invalid request (400)
+- `authentication_error` - Invalid authentication (401)
+- `permission_error` - Permission denied (403)
+- `not_found_error` - Not found (404)
+- `rate_limit_error` - Rate limit exceeded (429)
+- `api_error` - Internal server error (500)
+- `overloaded_error` - Server overloaded (503)
+
+**Note:** The implementation automatically uses the correct error type based on the API endpoint (OpenAI vs Anthropic) and maps VS Code language model errors to the appropriate official error types.
 
 ## Running All Tests
 

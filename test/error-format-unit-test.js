@@ -12,16 +12,25 @@ const ApiType = {
 
 const ERROR_CODES = {
     INVALID_REQUEST: "invalid_request_error",
+    AUTHENTICATION_ERROR: "authentication_error",
     PERMISSION_ERROR: "permission_error",
     NOT_FOUND_ERROR: "not_found_error",
-    API_ERROR: "api_error"
+    REQUEST_TOO_LARGE: "request_too_large",
+    RATE_LIMIT_EXCEEDED: "rate_limit_exceeded",
+    RATE_LIMIT_ERROR: "rate_limit_error",
+    API_ERROR: "api_error",
+    OVERLOADED_ERROR: "overloaded_error"
 };
 
 const HTTP_STATUS = {
     BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
     FORBIDDEN: 403,
     NOT_FOUND: 404,
-    INTERNAL_SERVER_ERROR: 500
+    REQUEST_TOO_LARGE: 413,
+    TOO_MANY_REQUESTS: 429,
+    INTERNAL_SERVER_ERROR: 500,
+    SERVICE_UNAVAILABLE: 503
 };
 
 // Mock the error formatting logic from sendError method
@@ -150,9 +159,50 @@ function testDifferentErrorTypes() {
         ERROR_CODES.NOT_FOUND_ERROR,
         ApiType.OPENAI
     );
+
+    // Test new error types
+    const authenticationError = formatError(
+        HTTP_STATUS.UNAUTHORIZED,
+        "invalid api key",
+        ERROR_CODES.AUTHENTICATION_ERROR,
+        ApiType.OPENAI
+    );
+
+    const rateLimitErrorOpenAI = formatError(
+        HTTP_STATUS.TOO_MANY_REQUESTS,
+        "rate limit exceeded",
+        ERROR_CODES.RATE_LIMIT_EXCEEDED,
+        ApiType.OPENAI
+    );
+
+    const rateLimitErrorAnthropic = formatError(
+        HTTP_STATUS.TOO_MANY_REQUESTS,
+        "rate limit exceeded",
+        ERROR_CODES.RATE_LIMIT_ERROR,
+        ApiType.ANTHROPIC
+    );
+
+    const requestTooLargeError = formatError(
+        HTTP_STATUS.REQUEST_TOO_LARGE,
+        "request entity too large",
+        ERROR_CODES.REQUEST_TOO_LARGE,
+        ApiType.OPENAI
+    );
+
+    const overloadedError = formatError(
+        HTTP_STATUS.SERVICE_UNAVAILABLE,
+        "server overloaded",
+        ERROR_CODES.OVERLOADED_ERROR,
+        ApiType.ANTHROPIC
+    );
     
     console.log('Anthropic Permission Error:', JSON.stringify(permissionError, null, 2));
     console.log('OpenAI Not Found Error:', JSON.stringify(notFoundError, null, 2));
+    console.log('OpenAI Authentication Error:', JSON.stringify(authenticationError, null, 2));
+    console.log('OpenAI Rate Limit Error:', JSON.stringify(rateLimitErrorOpenAI, null, 2));
+    console.log('Anthropic Rate Limit Error:', JSON.stringify(rateLimitErrorAnthropic, null, 2));
+    console.log('OpenAI Request Too Large Error:', JSON.stringify(requestTooLargeError, null, 2));
+    console.log('Anthropic Overloaded Error:', JSON.stringify(overloadedError, null, 2));
     
     const anthropicValid = permissionError.type === 'error' && 
                           permissionError.error.type === ERROR_CODES.PERMISSION_ERROR;
@@ -160,14 +210,21 @@ function testDifferentErrorTypes() {
     const openaiValid = notFoundError.error && 
                        notFoundError.error.type === ERROR_CODES.NOT_FOUND_ERROR &&
                        notFoundError.error.code === HTTP_STATUS.NOT_FOUND.toString();
+
+    const newErrorTypesValid = 
+        authenticationError.error.type === ERROR_CODES.AUTHENTICATION_ERROR &&
+        rateLimitErrorOpenAI.error.type === ERROR_CODES.RATE_LIMIT_EXCEEDED &&
+        rateLimitErrorAnthropic.error.type === ERROR_CODES.RATE_LIMIT_ERROR &&
+        requestTooLargeError.error.type === ERROR_CODES.REQUEST_TOO_LARGE &&
+        overloadedError.error.type === ERROR_CODES.OVERLOADED_ERROR;
     
-    if (anthropicValid && openaiValid) {
-        console.log('✅ Different error types are formatted correctly');
+    if (anthropicValid && openaiValid && newErrorTypesValid) {
+        console.log('✅ All error types are formatted correctly');
     } else {
-        console.log('❌ Different error types are not formatted correctly');
+        console.log('❌ Some error types are not formatted correctly');
     }
     
-    return anthropicValid && openaiValid;
+    return anthropicValid && openaiValid && newErrorTypesValid;
 }
 
 function runUnitTests() {

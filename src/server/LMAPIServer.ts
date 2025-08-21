@@ -4,7 +4,7 @@ import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
 import { ServerConfig, ServerState, ApiType, ErrorResponse, AnthropicErrorResponse } from "../types"
-import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
+import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, ERROR_CODES } from "../constants"
 
 export class LMAPIServer {
   private server?: http.Server
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId, ApiType.OPENAI)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId, ApiType.OPENAI, ERROR_CODES.API_ERROR)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -185,7 +185,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, ApiType.OPENAI)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, ApiType.OPENAI, ERROR_CODES.NOT_FOUND_ERROR)
     }
   }
 
@@ -195,18 +195,19 @@ export class LMAPIServer {
     })
   }
 
-  private sendError(res: http.ServerResponse, statusCode: number, message: string, requestId?: string, apiType?: ApiType): void {
+  private sendError(res: http.ServerResponse, statusCode: number, message: string, requestId?: string, apiType?: ApiType, errorType?: string): void {
     if (res.headersSent) {
       return
     }
 
+    const type = errorType || ERROR_CODES.API_ERROR
     let errorResponse: ErrorResponse | AnthropicErrorResponse
 
     if (apiType === ApiType.ANTHROPIC) {
       errorResponse = {
         type: "error",
         error: {
-          type: "api_error",
+          type,
           message,
         },
       }
@@ -215,7 +216,7 @@ export class LMAPIServer {
       errorResponse = {
         error: {
           message,
-          type: "api_error",
+          type,
           code: statusCode.toString(),
         },
       }
