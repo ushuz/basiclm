@@ -150,5 +150,3 @@ export interface AnthropicTool {
   description: string
   input_schema?: object
 }
-
-// Note: We use vscode.LanguageModelToolCallPart directly instead of a custom interface
