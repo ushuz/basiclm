@@ -472,6 +472,7 @@ export class RequestHandler {
     } catch (error) {
       Logger.error("OpenAI streaming error", error as Error, { requestId })
       const errorEvent = {
+        type: "error",
         error: {
           message: "stream processing error",
           type: ERROR_CODES.API_ERROR,
@@ -814,11 +815,13 @@ export class RequestHandler {
     }
 
     const errorResponse: ErrorResponse = {
+      type: "error",
       error: {
         message,
         type,
         code: statusCode.toString(),
       },
+      request_id: requestId,
     }
 
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })

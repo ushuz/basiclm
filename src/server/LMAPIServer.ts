@@ -202,12 +202,13 @@ export class LMAPIServer {
 
     res.writeHead(statusCode, { "Content-Type": "application/json" })
     res.end(JSON.stringify({
+      type: "error",
       error: {
         message,
         type: "api_error",
-        code: statusCode,
-        requestId,
+        code: statusCode.toString(),
       },
+      request_id: requestId,
     }, null, 2))
   }
 

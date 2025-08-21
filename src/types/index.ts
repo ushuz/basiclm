@@ -128,12 +128,14 @@ export interface AnthropicMessageResponse {
 }
 
 export interface ErrorResponse {
+  type?: "error"
   error: {
     message: string
     type: string
     param?: string
     code?: string
   }
+  request_id?: string
 }
 
 export interface OpenAITool {
