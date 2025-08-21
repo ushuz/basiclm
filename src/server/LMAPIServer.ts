@@ -1,10 +1,10 @@
 import * as http from "http"
 import * as vscode from "vscode"
 import { URL } from "url"
-import { Logger } from "../utils/Logger"
+import { Logger, UnifiedErrorResponse } from "../utils"
 import { RequestHandler } from "./RequestHandler"
 import { ServerConfig, ServerState } from "../types"
-import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
+import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, ERROR_CODES } from "../constants"
 
 export class LMAPIServer {
   private server?: http.Server
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
+        UnifiedErrorResponse.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", ERROR_CODES.API_ERROR, requestId)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -185,7 +185,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
+        UnifiedErrorResponse.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", ERROR_CODES.NOT_FOUND_ERROR, requestId)
     }
   }
 
@@ -193,22 +193,6 @@ export class LMAPIServer {
     Object.entries(CORS_HEADERS).forEach(([key, value]) => {
       res.setHeader(key, value)
     })
-  }
-
-  private sendError(res: http.ServerResponse, statusCode: number, message: string, requestId?: string): void {
-    if (res.headersSent) {
-      return
-    }
-
-    res.writeHead(statusCode, { "Content-Type": "application/json" })
-    res.end(JSON.stringify({
-      error: {
-        message,
-        type: "api_error",
-        code: statusCode,
-        requestId,
-      },
-    }, null, 2))
   }
 
   private generateRequestId(): string {

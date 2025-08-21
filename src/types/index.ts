@@ -133,6 +133,7 @@ export interface ErrorResponse {
     type: string
     param?: string
     code?: string
+    requestId?: string
   }
 }
 
