@@ -127,12 +127,25 @@ export interface AnthropicMessageResponse {
   }
 }
 
+export enum ApiType {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic"
+}
+
 export interface ErrorResponse {
   error: {
     message: string
     type: string
     param?: string
     code?: string
+  }
+}
+
+export interface AnthropicErrorResponse {
+  type: "error"
+  error: {
+    type: string
+    message: string
   }
 }
 

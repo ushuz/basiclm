@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
-import { ServerConfig, ServerState } from "../types"
+import { ServerConfig, ServerState, ApiType, ErrorResponse, AnthropicErrorResponse } from "../types"
 import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
 
 export class LMAPIServer {
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId, ApiType.OPENAI)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -185,7 +185,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, ApiType.OPENAI)
     }
   }
 
@@ -195,20 +195,34 @@ export class LMAPIServer {
     })
   }
 
-  private sendError(res: http.ServerResponse, statusCode: number, message: string, requestId?: string): void {
+  private sendError(res: http.ServerResponse, statusCode: number, message: string, requestId?: string, apiType?: ApiType): void {
     if (res.headersSent) {
       return
     }
 
+    let errorResponse: ErrorResponse | AnthropicErrorResponse
+
+    if (apiType === ApiType.ANTHROPIC) {
+      errorResponse = {
+        type: "error",
+        error: {
+          type: "api_error",
+          message,
+        },
+      }
+    } else {
+      // Default to OpenAI format for backward compatibility
+      errorResponse = {
+        error: {
+          message,
+          type: "api_error",
+          code: statusCode.toString(),
+        },
+      }
+    }
+
     res.writeHead(statusCode, { "Content-Type": "application/json" })
-    res.end(JSON.stringify({
-      error: {
-        message,
-        type: "api_error",
-        code: statusCode,
-        requestId,
-      },
-    }, null, 2))
+    res.end(JSON.stringify(errorResponse, null, 2))
   }
 
   private generateRequestId(): string {
