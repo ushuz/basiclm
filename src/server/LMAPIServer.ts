@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId, ApiType.OPENAI, ERROR_CODES.API_ERROR)
+        this.sendErrorOpenAI(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", ERROR_CODES.API_ERROR, requestId)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -185,7 +185,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, ApiType.OPENAI, ERROR_CODES.NOT_FOUND_ERROR)
+        this.sendErrorOpenAI(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", ERROR_CODES.NOT_FOUND_ERROR, requestId)
     }
   }
 
@@ -224,6 +224,14 @@ export class LMAPIServer {
 
     res.writeHead(statusCode, { "Content-Type": "application/json" })
     res.end(JSON.stringify(errorResponse, null, 2))
+  }
+
+  private sendErrorOpenAI(res: http.ServerResponse, statusCode: number, message: string, errorType: string, requestId?: string): void {
+    this.sendError(res, statusCode, message, requestId, ApiType.OPENAI, errorType)
+  }
+
+  private sendErrorAnthropic(res: http.ServerResponse, statusCode: number, message: string, errorType: string, requestId?: string): void {
+    this.sendError(res, statusCode, message, requestId, ApiType.ANTHROPIC, errorType)
   }
 
   private generateRequestId(): string {
