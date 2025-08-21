@@ -80,7 +80,11 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "package": "vsce package",
-    "test-api": "node test/api-test.js"
+    "test-api": "node test/api-test.js",
+    "test-error-formats": "node test/error-format-test.js",
+    "test-error-formats-unit": "node test/error-format-unit-test.js",
+    "test-error-handling": "node test/error-handling-integration-test.js",
+    "test-error-compliance": "node test/error-format-compliance-test.js"
   },
   "devDependencies": {
     "@types/vscode": "^1.92.0",

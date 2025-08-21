@@ -1,0 +1,58 @@
+# Error Format Tests
+
+This directory contains comprehensive tests for API error format compliance.
+
+## Test Files
+
+### `error-format-unit-test.js`
+Unit tests for the core error formatting logic. These tests verify that the error formatting functions produce the correct JSON structures for both OpenAI and Anthropic APIs.
+
+Run with: `npm run test-error-formats-unit`
+
+### `error-handling-integration-test.js` 
+Integration tests that simulate the complete error handling flow. These tests verify that errors are properly formatted in realistic request scenarios.
+
+Run with: `npm run test-error-handling`
+
+### `error-format-test.js`
+Live API tests that require a running server. These test actual HTTP error responses from the endpoints.
+
+Run with: `npm run test-error-formats` (requires running VS Code extension)
+
+### `error-format-compliance-test.js`
+Comprehensive test suite that runs all error format tests and validates compliance with official API specifications.
+
+Run with: `npm run test-error-compliance`
+
+## Error Format Specifications
+
+### OpenAI Format
+```json
+{
+  "error": {
+    "message": "Error description",
+    "type": "error_type",
+    "code": "400"
+  }
+}
+```
+
+### Anthropic Format
+```json
+{
+  "type": "error",
+  "error": {
+    "type": "error_type", 
+    "message": "Error description"
+  }
+}
+```
+
+## Running All Tests
+
+To run all error format tests:
+```bash
+npm run test-error-compliance
+```
+
+This will run both unit tests and integration tests, providing a comprehensive validation of error format compliance.
