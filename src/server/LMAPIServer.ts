@@ -186,7 +186,7 @@ export class LMAPIServer {
 
       default:
         // Determine API type from pathname for proper error format
-        const apiType = pathname.includes('/messages') ? APIEndpointType.ANTHROPIC : APIEndpointType.OPENAI
+        const apiType = pathname.includes("/messages") ? APIEndpointType.ANTHROPIC : APIEndpointType.OPENAI
         this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, apiType)
     }
   }
