@@ -382,9 +382,9 @@ export class RequestHandler {
   private async extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): Promise<vscode.LanguageModelToolCallPart[]> {
     const toolCalls: vscode.LanguageModelToolCallPart[] = []
     
-    // Process the response stream to find LanguageModelToolCallPart objects
+    // process the response stream to find LanguageModelToolCallPart objects
     for await (const part of response.stream) {
-      // Check if this part is a LanguageModelToolCallPart
+      // check if this part is a LanguageModelToolCallPart
       if (part instanceof vscode.LanguageModelToolCallPart) {
         toolCalls.push(part)
       }
@@ -409,9 +409,9 @@ export class RequestHandler {
       let chunkIndex = 0
       const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
-      // Process the response stream to get both text and tool calls
+      // process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        // Check if this is a text part
+        // check if this is a text part
         if (part instanceof vscode.LanguageModelTextPart) {
           const textChunk = part.value
           content += textChunk
@@ -434,17 +434,17 @@ export class RequestHandler {
           res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
           chunkIndex++
         }
-        // Check if this is a tool call part
+        // check if this is a tool call part
         else if (part instanceof vscode.LanguageModelToolCallPart) {
           toolCalls.push(part)
         }
       }
 
-      // Convert and send tool calls if any were found
+      // convert and send tool calls if any were found
       const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
       
       if (openAIToolCalls.length > 0) {
-        // Send tool calls in the final content chunk
+        // send tool calls in the final content chunk
         const toolCallChunk = {
           id: `chatcmpl-${requestId}`,
           object: "chat.completion.chunk",
@@ -510,19 +510,19 @@ export class RequestHandler {
       let content = ""
       const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
-      // Process the response stream to get both text and tool calls
+      // process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        // Check if this is a text part
+        // check if this is a text part
         if (part instanceof vscode.LanguageModelTextPart) {
           content += part.value
         }
-        // Check if this is a tool call part
+        // check if this is a tool call part
         else if (part instanceof vscode.LanguageModelToolCallPart) {
           toolCalls.push(part)
         }
       }
 
-      // Convert tool calls to OpenAI format
+      // convert tool calls to OpenAI format
       const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
       
       const message: any = {
@@ -616,9 +616,9 @@ export class RequestHandler {
       }
       res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
-      // Process the response stream to get both text and tool calls
+      // process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        // Check if this is a text part
+        // check if this is a text part
         if (part instanceof vscode.LanguageModelTextPart) {
           const textChunk = part.value
           content += textChunk
@@ -634,7 +634,7 @@ export class RequestHandler {
 
           res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
         }
-        // Check if this is a tool call part
+        // check if this is a tool call part
         else if (part instanceof vscode.LanguageModelToolCallPart) {
           toolCalls.push(part)
         }
@@ -648,11 +648,11 @@ export class RequestHandler {
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
       blockIndex++
 
-      // Check for tool calls and add them as additional content blocks
+      // check for tool calls and add them as additional content blocks
       const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
       
       for (const toolCall of anthropicToolCalls) {
-        // Send tool use content block start event
+        // send tool use content block start event
         const toolBlockStartEvent = {
           type: "content_block_start",
           index: blockIndex,
@@ -665,7 +665,7 @@ export class RequestHandler {
         }
         res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
 
-        // Send tool use content block stop event
+        // send tool use content block stop event
         const toolBlockStopEvent = {
           type: "content_block_stop",
           index: blockIndex,
@@ -714,24 +714,24 @@ export class RequestHandler {
       let content = ""
       const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
-      // Process the response stream to get both text and tool calls
+      // process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        // Check if this is a text part
+        // check if this is a text part
         if (part instanceof vscode.LanguageModelTextPart) {
           content += part.value
         }
-        // Check if this is a tool call part
+        // check if this is a tool call part
         else if (part instanceof vscode.LanguageModelToolCallPart) {
           toolCalls.push(part)
         }
       }
 
-      // Convert tool calls to Anthropic format
+      // convert tool calls to Anthropic format
       const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
       
       const responseContent: AnthropicContent[] = []
       
-      // Add text content if present
+      // add text content if present
       if (content) {
         responseContent.push({
           type: "text",
@@ -739,7 +739,7 @@ export class RequestHandler {
         })
       }
       
-      // Add tool use content if present
+      // add tool use content if present
       responseContent.push(...anthropicToolCalls)
       
       let stopReason: string = "end_turn"
