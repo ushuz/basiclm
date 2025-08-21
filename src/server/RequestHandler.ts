@@ -8,8 +8,7 @@ import {
   AnthropicMessageResponse,
   ServerState,
   ErrorResponse,
-  OpenAIErrorResponse,
-  AnthropicErrorResponse,
+  UnifiedErrorResponse,
   OpenAITool,
   AnthropicTool,
   OpenAIToolCall,
@@ -817,28 +816,15 @@ export class RequestHandler {
       return
     }
 
-    // Auto-detect API type based on endpoint
-    const isAnthropicAPI = endpoint?.includes("/messages") || endpoint?.includes("anthropic") || false
-    let errorResponse: OpenAIErrorResponse | AnthropicErrorResponse
-
-    if (isAnthropicAPI) {
-      errorResponse = {
-        type: "error",
-        error: {
-          type,
-          message,
-        },
-      } as AnthropicErrorResponse
-    } else {
-      // Default to OpenAI format
-      errorResponse = {
-        error: {
-          message,
-          type,
-          param: null,
-          code: null,
-        },
-      } as OpenAIErrorResponse
+    // Return unified format compatible with both OpenAI and Anthropic APIs
+    const errorResponse: UnifiedErrorResponse = {
+      type: "error",
+      error: {
+        message,
+        type,
+        param: null,
+        code: null,
+      },
     }
 
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })

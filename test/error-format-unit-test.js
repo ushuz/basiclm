@@ -16,79 +16,56 @@ const mockVscode = {
 
 // Simple unit test to verify error response formats
 function testErrorResponseFormats() {
-    console.log('Testing error response format logic...\n');
+    console.log('Testing unified error response format...\n');
     
     // Mock the content types constant
     const CONTENT_TYPES = { JSON: "application/json" };
     
-    // Test data
-    const testCases = [
-        {
-            name: 'OpenAI Error Format',
-            apiType: 'openai',
-            expected: {
-                error: {
-                    message: 'Test error message',
-                    type: 'invalid_request_error',
-                    param: null,
-                    code: null
-                }
-            }
-        },
-        {
-            name: 'Anthropic Error Format', 
-            apiType: 'anthropic',
-            expected: {
-                type: 'error',
-                error: {
-                    type: 'invalid_request_error',
-                    message: 'Test error message'
-                }
+    // Test the unified format that works for both APIs
+    const testCase = {
+        name: 'Unified Error Format (Compatible with both OpenAI and Anthropic)',
+        expected: {
+            type: 'error',
+            error: {
+                message: 'Test error message',
+                type: 'invalid_request_error',
+                param: null,
+                code: null
             }
         }
-    ];
+    };
     
-    // Test each case
-    testCases.forEach(testCase => {
-        console.log(`Testing ${testCase.name}:`);
-        
-        let errorResponse;
-        const message = 'Test error message';
-        const type = 'invalid_request_error';
-        
-        if (testCase.apiType === 'anthropic') {
-            errorResponse = {
-                type: "error",
-                error: {
-                    type,
-                    message,
-                },
-            };
-        } else {
-            // Default to OpenAI format
-            errorResponse = {
-                error: {
-                    message,
-                    type,
-                    param: null,
-                    code: null,
-                },
-            };
-        }
-        
-        console.log('Generated:', JSON.stringify(errorResponse, null, 2));
-        console.log('Expected: ', JSON.stringify(testCase.expected, null, 2));
-        
-        // Simple deep equality check
-        const generated = JSON.stringify(errorResponse);
-        const expected = JSON.stringify(testCase.expected);
-        
-        if (generated === expected) {
-            console.log('✅ Format is correct\n');
-        } else {
-            console.log('❌ Format is incorrect\n');
-        }
-    });
+    console.log(`Testing ${testCase.name}:`);
+    
+    // Generate unified error response
+    const message = 'Test error message';
+    const type = 'invalid_request_error';
+    
+    const errorResponse = {
+        type: "error",
+        error: {
+            message,
+            type,
+            param: null,
+            code: null,
+        },
+    };
+    
+    console.log('Generated:', JSON.stringify(errorResponse, null, 2));
+    console.log('Expected: ', JSON.stringify(testCase.expected, null, 2));
+    
+    // Simple deep equality check
+    const generated = JSON.stringify(errorResponse);
+    const expected = JSON.stringify(testCase.expected);
+    
+    if (generated === expected) {
+        console.log('✅ Unified format is correct');
+        console.log('✅ Compatible with OpenAI (has error.message, error.type, error.param, error.code)');
+        console.log('✅ Compatible with Anthropic (has type: "error" and error.type, error.message)');
+    } else {
+        console.log('❌ Unified format is incorrect');
+    }
+    console.log('');
 }
 
 function testErrorMapping() {
@@ -121,8 +98,9 @@ function testErrorMapping() {
     errorScenarios.forEach(scenario => {
         console.log(`Testing ${scenario.httpStatus} error with type ${scenario.errorType}:`);
         
-        // Test OpenAI format
-        const openaiError = {
+        // Test unified format that works for both APIs
+        const unifiedError = {
+            type: "error",
             error: {
                 message: scenario.message,
                 type: scenario.errorType,
@@ -131,18 +109,9 @@ function testErrorMapping() {
             },
         };
         
-        // Test Anthropic format
-        const anthropicError = {
-            type: "error",
-            error: {
-                type: scenario.errorType,
-                message: scenario.message,
-            },
-        };
-        
-        console.log('OpenAI format:', JSON.stringify(openaiError, null, 2));
-        console.log('Anthropic format:', JSON.stringify(anthropicError, null, 2));
-        console.log('✅ Both formats generated successfully\n');
+        console.log('Unified format:', JSON.stringify(unifiedError, null, 2));
+        console.log('✅ Unified format generated successfully');
+        console.log('✅ Compatible with both OpenAI and Anthropic APIs\n');
     });
 }
 

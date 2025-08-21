@@ -34,7 +34,7 @@ function makeRequest(options, data) {
 }
 
 async function testOpenAIErrorFormat() {
-    console.log('Testing OpenAI error format...');
+    console.log('Testing unified error format on OpenAI endpoint...');
     try {
         // Test with invalid model to trigger an error
         const response = await makeRequest({
@@ -51,17 +51,18 @@ async function testOpenAIErrorFormat() {
         });
         
         console.log('OpenAI Error Status:', response.statusCode);
-        console.log('OpenAI Error Format:', JSON.stringify(response.body, null, 2));
+        console.log('Unified Error Format:', JSON.stringify(response.body, null, 2));
         
-        // Validate OpenAI error format
-        if (response.body.error && 
+        // Validate unified error format (compatible with both APIs)
+        if (response.body.type === 'error' &&
+            response.body.error && 
             typeof response.body.error.message === 'string' &&
             typeof response.body.error.type === 'string' &&
             response.body.error.hasOwnProperty('param') &&
             response.body.error.hasOwnProperty('code')) {
-            console.log('✅ OpenAI error format is correct');
+            console.log('✅ Unified error format is correct (OpenAI compatible)');
         } else {
-            console.log('❌ OpenAI error format is incorrect');
+            console.log('❌ Unified error format is incorrect');
         }
         
     } catch (error) {
@@ -70,7 +71,7 @@ async function testOpenAIErrorFormat() {
 }
 
 async function testAnthropicErrorFormat() {
-    console.log('\nTesting Anthropic error format...');
+    console.log('\nTesting unified error format on Anthropic endpoint...');
     try {
         // Test with invalid model to trigger an error
         const response = await makeRequest({
@@ -88,16 +89,18 @@ async function testAnthropicErrorFormat() {
         });
         
         console.log('Anthropic Error Status:', response.statusCode);
-        console.log('Anthropic Error Format:', JSON.stringify(response.body, null, 2));
+        console.log('Unified Error Format:', JSON.stringify(response.body, null, 2));
         
-        // Validate Anthropic error format
+        // Validate unified error format (compatible with both APIs)
         if (response.body.type === 'error' &&
             response.body.error &&
             typeof response.body.error.type === 'string' &&
-            typeof response.body.error.message === 'string') {
-            console.log('✅ Anthropic error format is correct');
+            typeof response.body.error.message === 'string' &&
+            response.body.error.hasOwnProperty('param') &&
+            response.body.error.hasOwnProperty('code')) {
+            console.log('✅ Unified error format is correct (Anthropic compatible)');
         } else {
-            console.log('❌ Anthropic error format is incorrect');
+            console.log('❌ Unified error format is incorrect');
         }
         
     } catch (error) {
@@ -120,8 +123,8 @@ async function testInvalidEndpointErrorFormats() {
         
         console.log('Invalid OpenAI endpoint error:', JSON.stringify(response1.body, null, 2));
         
-        if (response1.body.error && !response1.body.type) {
-            console.log('✅ Invalid OpenAI endpoint uses OpenAI error format');
+        if (response1.body.type === 'error' && response1.body.error) {
+            console.log('✅ Invalid OpenAI endpoint uses unified error format');
         } else {
             console.log('❌ Invalid OpenAI endpoint error format is incorrect');
         }
@@ -142,7 +145,7 @@ async function testInvalidEndpointErrorFormats() {
         console.log('Invalid Anthropic endpoint error:', JSON.stringify(response2.body, null, 2));
         
         if (response2.body.type === 'error' && response2.body.error) {
-            console.log('✅ Invalid Anthropic endpoint uses Anthropic error format');
+            console.log('✅ Invalid Anthropic endpoint uses unified error format');
         } else {
             console.log('❌ Invalid Anthropic endpoint error format is incorrect');
         }

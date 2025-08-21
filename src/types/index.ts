@@ -153,6 +153,16 @@ export interface AnthropicErrorResponse {
   }
 }
 
+export interface UnifiedErrorResponse {
+  type: "error"
+  error: {
+    message: string
+    type: string
+    param?: string | null
+    code?: string | null
+  }
+}
+
 export interface OpenAITool {
   type: "function"
   function: {

@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
-import { ServerConfig, ServerState, OpenAIErrorResponse, AnthropicErrorResponse } from "../types"
+import { ServerConfig, ServerState, UnifiedErrorResponse } from "../types"
 import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
 
 export class LMAPIServer {
@@ -206,28 +206,15 @@ export class LMAPIServer {
       return
     }
 
-    // Auto-detect API type based on pathname
-    const isAnthropicAPI = pathname?.includes("/messages") || false
-    let errorResponse: OpenAIErrorResponse | AnthropicErrorResponse
-
-    if (isAnthropicAPI) {
-      errorResponse = {
-        type: "error",
-        error: {
-          type: "api_error",
-          message,
-        },
-      } as AnthropicErrorResponse
-    } else {
-      // Default to OpenAI format
-      errorResponse = {
-        error: {
-          message,
-          type: "api_error",
-          param: null,
-          code: null,
-        },
-      } as OpenAIErrorResponse
+    // Return unified format compatible with both OpenAI and Anthropic APIs
+    const errorResponse: UnifiedErrorResponse = {
+      type: "error",
+      error: {
+        message,
+        type: "api_error",
+        param: null,
+        code: null,
+      },
     }
 
     res.writeHead(statusCode, { "Content-Type": "application/json" })
