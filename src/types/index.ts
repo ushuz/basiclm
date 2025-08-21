@@ -151,9 +151,4 @@ export interface AnthropicTool {
   input_schema?: object
 }
 
-// VS Code Language Model response interfaces (assumed structure)
-export interface VSCodeToolCall {
-  name: string
-  arguments: string
-  callId: string
-}
+// Note: We use vscode.LanguageModelToolCallPart directly instead of a custom interface

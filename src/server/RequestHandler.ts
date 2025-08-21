@@ -10,7 +10,6 @@ import {
   ErrorResponse,
   OpenAITool,
   AnthropicTool,
-  VSCodeToolCall,
   OpenAIToolCall,
   AnthropicContent
 } from "../types"
@@ -352,7 +351,7 @@ export class RequestHandler {
     }))
   }
 
-  private convertVSCodeToolCallsToOpenAI(toolCalls?: VSCodeToolCall[]): OpenAIToolCall[] {
+  private convertVSCodeToolCallsToOpenAI(toolCalls?: vscode.LanguageModelToolCallPart[]): OpenAIToolCall[] {
     if (!toolCalls || !Array.isArray(toolCalls)) {
       return []
     }
@@ -362,12 +361,12 @@ export class RequestHandler {
       type: "function" as const,
       function: {
         name: call.name,
-        arguments: call.arguments
+        arguments: JSON.stringify(call.input)
       }
     }))
   }
 
-  private convertVSCodeToolCallsToAnthropic(toolCalls?: VSCodeToolCall[]): AnthropicContent[] {
+  private convertVSCodeToolCallsToAnthropic(toolCalls?: vscode.LanguageModelToolCallPart[]): AnthropicContent[] {
     if (!toolCalls || !Array.isArray(toolCalls)) {
       return []
     }
@@ -376,24 +375,18 @@ export class RequestHandler {
       type: "tool_use" as const,
       id: call.callId,
       name: call.name,
-      input: JSON.parse(call.arguments || "{}")
+      input: call.input
     }))
   }
 
-  private async extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): Promise<VSCodeToolCall[]> {
-    const toolCalls: VSCodeToolCall[] = []
+  private async extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): Promise<vscode.LanguageModelToolCallPart[]> {
+    const toolCalls: vscode.LanguageModelToolCallPart[] = []
     
     // Process the response stream to find LanguageModelToolCallPart objects
     for await (const part of response.stream) {
-      // Check if this part is a tool call part
-      if (part && typeof part === "object" && "callId" in part && "name" in part) {
-        // This appears to be a LanguageModelToolCallPart
-        const toolCallPart = part as any
-        toolCalls.push({
-          name: toolCallPart.name,
-          arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
-          callId: toolCallPart.callId
-        })
+      // Check if this part is a LanguageModelToolCallPart
+      if (part instanceof vscode.LanguageModelToolCallPart) {
+        toolCalls.push(part)
       }
     }
     
@@ -414,43 +407,36 @@ export class RequestHandler {
 
       let content = ""
       let chunkIndex = 0
-      const toolCalls: VSCodeToolCall[] = []
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
       // Process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        if (part && typeof part === "object") {
-          // Check if this is a text part
-          if ("value" in part && typeof part.value === "string") {
-            const textChunk = part.value
-            content += textChunk
+        // Check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          const textChunk = part.value
+          content += textChunk
 
-            const streamChunk = {
-              id: `chatcmpl-${requestId}`,
-              object: "chat.completion.chunk",
-              created: Math.floor(Date.now() / 1000),
-              model: request.model,
-              choices: [{
-                index: 0,
-                delta: {
-                  role: chunkIndex === 0 ? "assistant" : undefined,
-                  content: textChunk
-                },
-                finish_reason: null
-              }]
-            }
+          const streamChunk = {
+            id: `chatcmpl-${requestId}`,
+            object: "chat.completion.chunk",
+            created: Math.floor(Date.now() / 1000),
+            model: request.model,
+            choices: [{
+              index: 0,
+              delta: {
+                role: chunkIndex === 0 ? "assistant" : undefined,
+                content: textChunk
+              },
+              finish_reason: null
+            }]
+          }
 
-            res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
-            chunkIndex++
-          }
-          // Check if this is a tool call part
-          else if ("callId" in part && "name" in part) {
-            const toolCallPart = part as any
-            toolCalls.push({
-              name: toolCallPart.name,
-              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
-              callId: toolCallPart.callId
-            })
-          }
+          res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
+          chunkIndex++
+        }
+        // Check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
         }
       }
 
@@ -522,24 +508,17 @@ export class RequestHandler {
       Logger.debug("collecting OpenAI full response", { requestId })
 
       let content = ""
-      const toolCalls: VSCodeToolCall[] = []
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
       // Process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        if (part && typeof part === "object") {
-          // Check if this is a text part
-          if ("value" in part && typeof part.value === "string") {
-            content += part.value
-          }
-          // Check if this is a tool call part
-          else if ("callId" in part && "name" in part) {
-            const toolCallPart = part as any
-            toolCalls.push({
-              name: toolCallPart.name,
-              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
-              callId: toolCallPart.callId
-            })
-          }
+        // Check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          content += part.value
+        }
+        // Check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
         }
       }
 
@@ -608,7 +587,7 @@ export class RequestHandler {
 
       let content = ""
       let blockIndex = 0
-      const toolCalls: VSCodeToolCall[] = []
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
       // send initial message_start event
       const messageStartEvent = {
@@ -639,32 +618,25 @@ export class RequestHandler {
 
       // Process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        if (part && typeof part === "object") {
-          // Check if this is a text part
-          if ("value" in part && typeof part.value === "string") {
-            const textChunk = part.value
-            content += textChunk
+        // Check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          const textChunk = part.value
+          content += textChunk
 
-            const contentBlockDeltaEvent = {
-              type: "content_block_delta",
-              index: blockIndex,
-              delta: {
-                type: "text_delta",
-                text: textChunk
-              }
+          const contentBlockDeltaEvent = {
+            type: "content_block_delta",
+            index: blockIndex,
+            delta: {
+              type: "text_delta",
+              text: textChunk
             }
+          }
 
-            res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
-          }
-          // Check if this is a tool call part
-          else if ("callId" in part && "name" in part) {
-            const toolCallPart = part as any
-            toolCalls.push({
-              name: toolCallPart.name,
-              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
-              callId: toolCallPart.callId
-            })
-          }
+          res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
+        }
+        // Check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
         }
       }
 
@@ -740,24 +712,17 @@ export class RequestHandler {
       Logger.debug("collecting Anthropic full response", { requestId })
 
       let content = ""
-      const toolCalls: VSCodeToolCall[] = []
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
       // Process the response stream to get both text and tool calls
       for await (const part of response.stream) {
-        if (part && typeof part === "object") {
-          // Check if this is a text part
-          if ("value" in part && typeof part.value === "string") {
-            content += part.value
-          }
-          // Check if this is a tool call part
-          else if ("callId" in part && "name" in part) {
-            const toolCallPart = part as any
-            toolCalls.push({
-              name: toolCallPart.name,
-              arguments: toolCallPart.parameters ? JSON.stringify(toolCallPart.parameters) : (toolCallPart.arguments || "{}"),
-              callId: toolCallPart.callId
-            })
-          }
+        // Check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          content += part.value
+        }
+        // Check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
         }
       }
 
