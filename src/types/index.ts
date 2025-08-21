@@ -136,6 +136,23 @@ export interface ErrorResponse {
   }
 }
 
+export interface OpenAIErrorResponse {
+  error: {
+    message: string
+    type: string
+    param?: string | null
+    code?: string | null
+  }
+}
+
+export interface AnthropicErrorResponse {
+  type: "error"
+  error: {
+    type: string
+    message: string
+  }
+}
+
 export interface OpenAITool {
   type: "function"
   function: {
@@ -149,4 +166,9 @@ export interface AnthropicTool {
   name: string
   description: string
   input_schema?: object
+}
+
+export enum APIEndpointType {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic"
 }
