@@ -9,7 +9,9 @@ import {
   ServerState,
   ErrorResponse,
   OpenAITool,
-  AnthropicTool
+  AnthropicTool,
+  OpenAIToolCall,
+  AnthropicContent,
 } from "../types"
 import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
 
@@ -195,8 +197,8 @@ export class RequestHandler {
           owned_by: model.vendor || "unknown",
           permission: [],
           root: model.id,
-          parent: null
-        }))
+          parent: null,
+        })),
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
@@ -230,17 +232,17 @@ export class RequestHandler {
           running: serverState.isRunning,
           uptime: serverState.startTime ? Date.now() - serverState.startTime.getTime() : 0,
           requests: serverState.requestCount,
-          errors: serverState.errorCount
+          errors: serverState.errorCount,
         },
         languageModels: {
           available: models.length,
-          accessible: models.length > 0
+          accessible: models.length > 0,
         },
         endpoints: {
           openai: "/v1/chat/completions",
-          anthropic: "/v1/messages"
+          anthropic: "/v1/messages",
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
@@ -333,7 +335,7 @@ export class RequestHandler {
     return tools.map(tool => ({
       name: tool.function.name,
       description: tool.function.description,
-      inputSchema: tool.function.parameters
+      inputSchema: tool.function.parameters,
     }))
   }
 
@@ -345,8 +347,50 @@ export class RequestHandler {
     return tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: tool.input_schema
+      inputSchema: tool.input_schema,
     }))
+  }
+
+  private convertVSCodeToolCallsToOpenAI(toolCalls?: vscode.LanguageModelToolCallPart[]): OpenAIToolCall[] {
+    if (!toolCalls || !Array.isArray(toolCalls)) {
+      return []
+    }
+
+    return toolCalls.map(call => ({
+      id: call.callId,
+      type: "function" as const,
+      function: {
+        name: call.name,
+        arguments: JSON.stringify(call.input),
+      },
+    }))
+  }
+
+  private convertVSCodeToolCallsToAnthropic(toolCalls?: vscode.LanguageModelToolCallPart[]): AnthropicContent[] {
+    if (!toolCalls || !Array.isArray(toolCalls)) {
+      return []
+    }
+
+    return toolCalls.map(call => ({
+      type: "tool_use" as const,
+      id: call.callId,
+      name: call.name,
+      input: call.input,
+    }))
+  }
+
+  private async extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): Promise<vscode.LanguageModelToolCallPart[]> {
+    const toolCalls: vscode.LanguageModelToolCallPart[] = []
+    
+    // process the response stream to find LanguageModelToolCallPart objects
+    for await (const part of response.stream) {
+      // check if this part is a LanguageModelToolCallPart
+      if (part instanceof vscode.LanguageModelToolCallPart) {
+        toolCalls.push(part)
+      }
+    }
+    
+    return toolCalls
   }
 
   private async handleOpenAIStreamingResponse(
@@ -363,11 +407,45 @@ export class RequestHandler {
 
       let content = ""
       let chunkIndex = 0
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
-      for await (const chunk of response.text) {
-        content += chunk
+      // process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        // check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          const textChunk = part.value
+          content += textChunk
 
-        const streamChunk = {
+          const streamChunk = {
+            id: `chatcmpl-${requestId}`,
+            object: "chat.completion.chunk",
+            created: Math.floor(Date.now() / 1000),
+            model: request.model,
+            choices: [{
+              index: 0,
+              delta: {
+                role: chunkIndex === 0 ? "assistant" : undefined,
+                content: textChunk,
+              },
+              finish_reason: null,
+            }],
+          }
+
+          res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
+          chunkIndex++
+        }
+        // check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
+        }
+      }
+
+      // convert and send tool calls if any were found
+      const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
+      
+      if (openAIToolCalls.length > 0) {
+        // send tool calls in the final content chunk
+        const toolCallChunk = {
           id: `chatcmpl-${requestId}`,
           object: "chat.completion.chunk",
           created: Math.floor(Date.now() / 1000),
@@ -375,15 +453,12 @@ export class RequestHandler {
           choices: [{
             index: 0,
             delta: {
-              role: chunkIndex === 0 ? "assistant" : undefined,
-              content: chunk
+              tool_calls: openAIToolCalls,
             },
-            finish_reason: null
-          }]
+            finish_reason: null,
+          }],
         }
-
-        res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
-        chunkIndex++
+        res.write(`data: ${JSON.stringify(toolCallChunk)}\n\n`)
       }
 
       // send final chunk
@@ -395,22 +470,26 @@ export class RequestHandler {
         choices: [{
           index: 0,
           delta: {},
-          finish_reason: "stop"
-        }]
+          finish_reason: openAIToolCalls.length > 0 ? "tool_calls" : "stop",
+        }],
       }
 
       res.write(`data: ${JSON.stringify(finalChunk)}\n\n`)
       res.write("data: [DONE]\n\n")
 
-      Logger.debug("OpenAI streaming response completed", { requestId, contentLength: content.length })
+      Logger.debug("OpenAI streaming response completed", { 
+        requestId, 
+        contentLength: content.length,
+        toolCallsCount: toolCalls.length, 
+      })
 
     } catch (error) {
       Logger.error("OpenAI streaming error", error as Error, { requestId })
       const errorEvent = {
         error: {
           message: "stream processing error",
-          type: ERROR_CODES.API_ERROR
-        }
+          type: ERROR_CODES.API_ERROR,
+        },
       }
       res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
     } finally {
@@ -429,8 +508,33 @@ export class RequestHandler {
       Logger.debug("collecting OpenAI full response", { requestId })
 
       let content = ""
-      for await (const chunk of response.text) {
-        content += chunk
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
+
+      // process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        // check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          content += part.value
+        }
+        // check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
+        }
+      }
+
+      // convert tool calls to OpenAI format
+      const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
+      
+      const message: any = {
+        role: "assistant",
+        content: content || null,
+      }
+
+      let finishReason: string = "stop"
+      
+      if (openAIToolCalls.length > 0) {
+        message.tool_calls = openAIToolCalls
+        finishReason = "tool_calls"
       }
 
       const completionResponse: OpenAIChatCompletionResponse = {
@@ -440,17 +544,14 @@ export class RequestHandler {
         model: request.model,
         choices: [{
           index: 0,
-          message: {
-            role: "assistant",
-            content: content
-          },
-          finish_reason: "stop"
+          message: message,
+          finish_reason: finishReason as any,
         }],
         usage: {
           prompt_tokens: this.estimateTokens(request.messages),
           completion_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
-          total_tokens: 0
-        }
+          total_tokens: 0,
+        },
       }
 
       completionResponse.usage.total_tokens =
@@ -462,7 +563,8 @@ export class RequestHandler {
       Logger.debug("OpenAI response sent", {
         requestId,
         contentLength: content.length,
-        totalTokens: completionResponse.usage.total_tokens
+        totalTokens: completionResponse.usage.total_tokens,
+        toolCallsCount: toolCalls.length,
       })
 
     } catch (error) {
@@ -484,7 +586,8 @@ export class RequestHandler {
       Logger.debug("starting Anthropic streaming response", { requestId })
 
       let content = ""
-      let isFirst = true
+      let blockIndex = 0
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
 
       // send initial message_start event
       const messageStartEvent = {
@@ -497,51 +600,91 @@ export class RequestHandler {
           model: request.model,
           stop_reason: null,
           stop_sequence: null,
-          usage: { input_tokens: 0, output_tokens: 0 }
-        }
+          usage: { input_tokens: 0, output_tokens: 0 },
+        },
       }
       res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
-      // send content_block_start event
+      // send content_block_start event for text
       const contentBlockStartEvent = {
         type: "content_block_start",
-        index: 0,
+        index: blockIndex,
         content_block: {
           type: "text",
-          text: ""
-        }
+          text: "",
+        },
       }
       res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
-      for await (const chunk of response.text) {
-        content += chunk
+      // process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        // check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          const textChunk = part.value
+          content += textChunk
 
-        const contentBlockDeltaEvent = {
-          type: "content_block_delta",
-          index: 0,
-          delta: {
-            type: "text_delta",
-            text: chunk
+          const contentBlockDeltaEvent = {
+            type: "content_block_delta",
+            index: blockIndex,
+            delta: {
+              type: "text_delta",
+              text: textChunk,
+            },
           }
-        }
 
-        res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
+          res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
+        }
+        // check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
+        }
       }
 
-      // send content_block_stop event
+      // send content_block_stop event for text
       const contentBlockStopEvent = {
         type: "content_block_stop",
-        index: 0
+        index: blockIndex,
       }
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
+      blockIndex++
+
+      // check for tool calls and add them as additional content blocks
+      const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
+      
+      for (const toolCall of anthropicToolCalls) {
+        // send tool use content block start event
+        const toolBlockStartEvent = {
+          type: "content_block_start",
+          index: blockIndex,
+          content_block: {
+            type: "tool_use",
+            id: toolCall.id,
+            name: toolCall.name,
+            input: toolCall.input,
+          },
+        }
+        res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
+
+        // send tool use content block stop event
+        const toolBlockStopEvent = {
+          type: "content_block_stop",
+          index: blockIndex,
+        }
+        res.write(`data: ${JSON.stringify(toolBlockStopEvent)}\n\n`)
+        blockIndex++
+      }
 
       // send final message_stop event
       const messageStopEvent = {
-        type: "message_stop"
+        type: "message_stop",
       }
       res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
-      Logger.debug("Anthropic streaming response completed", { requestId, contentLength: content.length })
+      Logger.debug("Anthropic streaming response completed", { 
+        requestId, 
+        contentLength: content.length,
+        toolCallsCount: anthropicToolCalls.length, 
+      })
 
     } catch (error) {
       Logger.error("Anthropic streaming error", error as Error, { requestId })
@@ -549,8 +692,8 @@ export class RequestHandler {
         type: "error",
         error: {
           message: "stream processing error",
-          type: ERROR_CODES.API_ERROR
-        }
+          type: ERROR_CODES.API_ERROR,
+        },
       }
       res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
     } finally {
@@ -569,24 +712,52 @@ export class RequestHandler {
       Logger.debug("collecting Anthropic full response", { requestId })
 
       let content = ""
-      for await (const chunk of response.text) {
-        content += chunk
+      const toolCalls: vscode.LanguageModelToolCallPart[] = []
+
+      // process the response stream to get both text and tool calls
+      for await (const part of response.stream) {
+        // check if this is a text part
+        if (part instanceof vscode.LanguageModelTextPart) {
+          content += part.value
+        }
+        // check if this is a tool call part
+        else if (part instanceof vscode.LanguageModelToolCallPart) {
+          toolCalls.push(part)
+        }
+      }
+
+      // convert tool calls to Anthropic format
+      const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
+      
+      const responseContent: AnthropicContent[] = []
+      
+      // add text content if present
+      if (content) {
+        responseContent.push({
+          type: "text",
+          text: content,
+        })
+      }
+      
+      // add tool use content if present
+      responseContent.push(...anthropicToolCalls)
+      
+      let stopReason: string = "end_turn"
+      if (anthropicToolCalls.length > 0) {
+        stopReason = "tool_use"
       }
 
       const messageResponse: AnthropicMessageResponse = {
         id: `msg_${requestId}`,
         type: "message",
         role: "assistant",
-        content: [{
-          type: "text",
-          text: content
-        }],
+        content: responseContent,
         model: request.model,
-        stop_reason: "end_turn",
+        stop_reason: stopReason as any,
         usage: {
           input_tokens: this.estimateTokens(request.messages),
-          output_tokens: this.estimateTokens([{ role: "assistant", content: content }])
-        }
+          output_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
+        },
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
@@ -596,7 +767,8 @@ export class RequestHandler {
         requestId,
         contentLength: content.length,
         inputTokens: messageResponse.usage.input_tokens,
-        outputTokens: messageResponse.usage.output_tokens
+        outputTokens: messageResponse.usage.output_tokens,
+        toolCallsCount: anthropicToolCalls.length,
       })
 
     } catch (error) {
@@ -659,8 +831,8 @@ export class RequestHandler {
       error: {
         message,
         type,
-        code: statusCode.toString()
-      }
+        code: statusCode.toString(),
+      },
     }
 
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })

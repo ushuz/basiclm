@@ -24,7 +24,8 @@
     "@typescript-eslint/indent": ["error", 2, { "SwitchCase": 1 }],
     "curly": "off",
     "eqeqeq": "warn",
-    "no-throw-literal": "warn"
+    "no-throw-literal": "warn",
+    "comma-dangle": ["error", "always-multiline"]
   },
   "ignorePatterns": [
     "out",

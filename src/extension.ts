@@ -140,28 +140,28 @@ async function showServerStatus() {
       {
         label: "Stop Server",
         description: "Stop the BasicLM",
-        action: "stop"
+        action: "stop",
       },
       {
         label: "Restart Server",
         description: "Restart the BasicLM",
-        action: "restart"
+        action: "restart",
       },
       {
         label: "Copy OpenAI URL",
         description: `http://${state.host}:${state.port}/v1/chat/completions`,
-        action: "copy-openai-url"
+        action: "copy-openai-url",
       },
       {
         label: "Copy Anthropic URL",
         description: `http://${state.host}:${state.port}/v1/messages`,
-        action: "copy-anthropic-url"
-      }
+        action: "copy-anthropic-url",
+      },
     ]
 
     const selected = await vscode.window.showQuickPick(items, {
       title: "BasicLM Status",
-      placeHolder: `Running on http://${state.host}:${state.port} | Uptime: ${uptimeStr} | Requests: ${state.requestCount}`
+      placeHolder: `Running on http://${state.host}:${state.port} | Uptime: ${uptimeStr} | Requests: ${state.requestCount}`,
     })
 
     if (selected) {
@@ -173,18 +173,18 @@ async function showServerStatus() {
       {
         label: "Start Server",
         description: `Start on http://${config.host}:${config.port}`,
-        action: "start"
+        action: "start",
       },
       {
         label: "Configure",
         description: "Open extension settings",
-        action: "configure"
-      }
+        action: "configure",
+      },
     ]
 
     const selected = await vscode.window.showQuickPick(items, {
       title: "BasicLM Status",
-      placeHolder: "Stopped"
+      placeHolder: "Stopped",
     })
 
     if (selected) {

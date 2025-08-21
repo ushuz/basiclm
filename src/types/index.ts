@@ -31,10 +31,21 @@ export interface OpenAIChatCompletionRequest {
 }
 
 export interface OpenAIMessage {
-  role: "system" | "user" | "assistant" | "function"
-  content: string | OpenAIMessageContent[]
+  role: "system" | "user" | "assistant" | "function" | "tool"
+  content: string | OpenAIMessageContent[] | null
   name?: string
   function_call?: {
+    name: string
+    arguments: string
+  }
+  tool_calls?: OpenAIToolCall[]
+  tool_call_id?: string
+}
+
+export interface OpenAIToolCall {
+  id: string
+  type: "function"
+  function: {
     name: string
     arguments: string
   }
@@ -65,7 +76,7 @@ export interface OpenAIChatCompletionResponse {
 export interface OpenAIChoice {
   index: number
   message: OpenAIMessage
-  finish_reason: "stop" | "length" | "function_call" | "content_filter" | null
+  finish_reason: "stop" | "length" | "function_call" | "tool_calls" | "content_filter" | null
 }
 
 export interface AnthropicMessageRequest {
@@ -87,13 +98,19 @@ export interface AnthropicMessage {
 }
 
 export interface AnthropicContent {
-  type: "text" | "image"
+  type: "text" | "image" | "tool_use" | "tool_result"
   text?: string
   source?: {
     type: "base64"
     media_type: string
     data: string
   }
+  id?: string
+  name?: string
+  input?: any
+  content?: string | AnthropicContent[]
+  tool_use_id?: string
+  is_error?: boolean
 }
 
 export interface AnthropicMessageResponse {
@@ -102,7 +119,7 @@ export interface AnthropicMessageResponse {
   role: "assistant"
   content: AnthropicContent[]
   model: string
-  stop_reason: "end_turn" | "max_tokens" | "stop_sequence" | null
+  stop_reason: "end_turn" | "max_tokens" | "stop_sequence" | "tool_use" | null
   stop_sequence?: string
   usage: {
     input_tokens: number
