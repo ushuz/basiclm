@@ -29,7 +29,7 @@ export class RequestHandler {
   ): Promise<void> {
     try {
       if (req.method !== "POST") {
-        this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
 
@@ -40,21 +40,21 @@ export class RequestHandler {
 
       // validate request
       if (!request.model || !request.messages || !Array.isArray(request.messages)) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model and messages are required", ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model and messages are required", ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
 
       // check vs code language model access
       const models = await vscode.lm.selectChatModels()
       if (models.length === 0) {
-        this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
         return
       }
 
       // select model based on request
       const model = this.selectModel(models, request.model)
       if (!model) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
       Logger.debug("selected vs code model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
@@ -86,7 +86,7 @@ export class RequestHandler {
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId, APIEndpointType.OPENAI)
         } else {
-          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId, APIEndpointType.OPENAI)
+          this.sendOpenAIError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
         }
       }
 
@@ -94,7 +94,7 @@ export class RequestHandler {
       Logger.error("error handling OpenAI chat completions", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
       }
     }
   }
@@ -106,7 +106,7 @@ export class RequestHandler {
   ): Promise<void> {
     try {
       if (req.method !== "POST") {
-        this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.ANTHROPIC)
+        this.sendAnthropicError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
 
@@ -117,21 +117,21 @@ export class RequestHandler {
 
       // validate request
       if (!request.model || !request.messages || !Array.isArray(request.messages) || !request.max_tokens) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model, messages, and max_tokens are required", ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.ANTHROPIC)
+        this.sendAnthropicError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model, messages, and max_tokens are required", ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
 
       // check vs code language model access
       const models = await vscode.lm.selectChatModels()
       if (models.length === 0) {
-        this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId, APIEndpointType.ANTHROPIC)
+        this.sendAnthropicError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
         return
       }
 
       // select model based on request
       const model = this.selectModel(models, request.model)
       if (!model) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.ANTHROPIC)
+        this.sendAnthropicError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
       Logger.debug("selected vs code model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
@@ -163,7 +163,7 @@ export class RequestHandler {
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId, APIEndpointType.ANTHROPIC)
         } else {
-          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId, APIEndpointType.ANTHROPIC)
+          this.sendAnthropicError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
         }
       }
 
@@ -171,7 +171,7 @@ export class RequestHandler {
       Logger.error("error handling Anthropic messages", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId, APIEndpointType.ANTHROPIC)
+        this.sendAnthropicError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
       }
     }
   }
@@ -183,7 +183,7 @@ export class RequestHandler {
   ): Promise<void> {
     try {
       if (req.method !== "GET") {
-        this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
 
@@ -211,7 +211,7 @@ export class RequestHandler {
 
     } catch (error) {
       Logger.error("error handling models request", error as Error, { requestId })
-      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "failed to retrieve models", ERROR_CODES.API_ERROR, requestId, APIEndpointType.OPENAI)
+      this.sendOpenAIError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "failed to retrieve models", ERROR_CODES.API_ERROR, requestId)
     }
   }
 
@@ -223,7 +223,7 @@ export class RequestHandler {
   ): Promise<void> {
     try {
       if (req.method !== "GET") {
-        this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
 
@@ -253,7 +253,7 @@ export class RequestHandler {
 
     } catch (error) {
       Logger.error("error handling health check", error as Error, { requestId })
-      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "health check failed", ERROR_CODES.API_ERROR, requestId, APIEndpointType.OPENAI)
+      this.sendOpenAIError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "health check failed", ERROR_CODES.API_ERROR, requestId)
     }
   }
 
@@ -803,47 +803,62 @@ export class RequestHandler {
         message = `language model error: ${error.message}`
     }
 
-    this.sendError(res, statusCode, message, errorCode, requestId, apiType)
+    if (apiType === APIEndpointType.ANTHROPIC) {
+      this.sendAnthropicError(res, statusCode, message, errorCode, requestId)
+    } else {
+      this.sendOpenAIError(res, statusCode, message, errorCode, requestId)
+    }
   }
 
-  private sendError(
+  private sendOpenAIError(
     res: http.ServerResponse,
     statusCode: number,
     message: string,
     type: string,
-    requestId: string,
-    apiType: APIEndpointType = APIEndpointType.OPENAI
+    requestId: string
   ): void {
     if (res.headersSent) {
       return
     }
 
-    let errorResponse: OpenAIErrorResponse | AnthropicErrorResponse
-
-    if (apiType === APIEndpointType.ANTHROPIC) {
-      errorResponse = {
-        type: "error",
-        error: {
-          type,
-          message,
-        },
-      } as AnthropicErrorResponse
-    } else {
-      // Default to OpenAI format
-      errorResponse = {
-        error: {
-          message,
-          type,
-          param: null,
-          code: null,
-        },
-      } as OpenAIErrorResponse
+    const errorResponse: OpenAIErrorResponse = {
+      error: {
+        message,
+        type,
+        param: null,
+        code: null,
+      },
     }
 
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
     res.end(JSON.stringify(errorResponse, null, 2))
 
-    Logger.error(`error response: ${statusCode}`, new Error(message), { type, requestId, apiType })
+    Logger.error(`error response: ${statusCode}`, new Error(message), { type, requestId, apiType: "openai" })
+  }
+
+  private sendAnthropicError(
+    res: http.ServerResponse,
+    statusCode: number,
+    message: string,
+    type: string,
+    requestId: string
+  ): void {
+    if (res.headersSent) {
+      return
+    }
+
+    const errorResponse: AnthropicErrorResponse = {
+      type: "error",
+      error: {
+        type,
+        message,
+      },
+    }
+
+    res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
+    res.end(JSON.stringify(errorResponse, null, 2))
+
+    Logger.error(`error response: ${statusCode}`, new Error(message), { type, requestId, apiType: "anthropic" })
   }
 
   private async readRequestBody(req: http.IncomingMessage): Promise<string> {

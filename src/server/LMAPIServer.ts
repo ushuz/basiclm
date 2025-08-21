@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
-import { ServerConfig, ServerState, APIEndpointType, OpenAIErrorResponse, AnthropicErrorResponse } from "../types"
+import { ServerConfig, ServerState, OpenAIErrorResponse, AnthropicErrorResponse } from "../types"
 import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
 
 export class LMAPIServer {
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId, APIEndpointType.OPENAI)
+        this.sendOpenAIError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -186,8 +186,11 @@ export class LMAPIServer {
 
       default:
         // Determine API type from pathname for proper error format
-        const apiType = pathname.includes("/messages") ? APIEndpointType.ANTHROPIC : APIEndpointType.OPENAI
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, apiType)
+        if (pathname.includes("/messages")) {
+          this.sendAnthropicError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
+        } else {
+          this.sendOpenAIError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
+        }
     }
   }
 
@@ -197,37 +200,45 @@ export class LMAPIServer {
     })
   }
 
-  private sendError(
+  private sendOpenAIError(
     res: http.ServerResponse, 
     statusCode: number, 
     message: string, 
-    requestId?: string, 
-    apiType: APIEndpointType = APIEndpointType.OPENAI
+    requestId?: string
   ): void {
     if (res.headersSent) {
       return
     }
 
-    let errorResponse: OpenAIErrorResponse | AnthropicErrorResponse
+    const errorResponse: OpenAIErrorResponse = {
+      error: {
+        message,
+        type: "api_error",
+        param: null,
+        code: null,
+      },
+    }
 
-    if (apiType === APIEndpointType.ANTHROPIC) {
-      errorResponse = {
-        type: "error",
-        error: {
-          type: "api_error",
-          message,
-        },
-      } as AnthropicErrorResponse
-    } else {
-      // Default to OpenAI format
-      errorResponse = {
-        error: {
-          message,
-          type: "api_error",
-          param: null,
-          code: null,
-        },
-      } as OpenAIErrorResponse
+    res.writeHead(statusCode, { "Content-Type": "application/json" })
+    res.end(JSON.stringify(errorResponse, null, 2))
+  }
+
+  private sendAnthropicError(
+    res: http.ServerResponse, 
+    statusCode: number, 
+    message: string, 
+    requestId?: string
+  ): void {
+    if (res.headersSent) {
+      return
+    }
+
+    const errorResponse: AnthropicErrorResponse = {
+      type: "error",
+      error: {
+        type: "api_error",
+        message,
+      },
     }
 
     res.writeHead(statusCode, { "Content-Type": "application/json" })
