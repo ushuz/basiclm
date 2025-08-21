@@ -1,10 +1,10 @@
 import * as http from "http"
 import * as vscode from "vscode"
 import { URL } from "url"
-import { Logger, UnifiedErrorResponse } from "../utils"
+import { Logger } from "../utils"
 import { RequestHandler } from "./RequestHandler"
-import { ServerConfig, ServerState } from "../types"
-import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, ERROR_CODES } from "../constants"
+import { ServerConfig, ServerState, ErrorResponse } from "../types"
+import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, ERROR_CODES, CONTENT_TYPES } from "../constants"
 
 export class LMAPIServer {
   private server?: http.Server
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        UnifiedErrorResponse.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", ERROR_CODES.API_ERROR, requestId)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", ERROR_CODES.API_ERROR, requestId)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -185,8 +185,36 @@ export class LMAPIServer {
         break
 
       default:
-        UnifiedErrorResponse.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", ERROR_CODES.NOT_FOUND_ERROR, requestId)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", ERROR_CODES.NOT_FOUND_ERROR, requestId)
     }
+  }
+
+  private sendError(
+    res: http.ServerResponse,
+    statusCode: number,
+    message: string,
+    type: string,
+    requestId?: string,
+    param?: string
+  ): void {
+    if (res.headersSent) {
+      return
+    }
+
+    const errorResponse: ErrorResponse = {
+      error: {
+        message,
+        type,
+        code: statusCode.toString(),
+        ...(param && { param }),
+        ...(requestId && { requestId }),
+      },
+    }
+
+    res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
+    res.end(JSON.stringify(errorResponse, null, 2))
+
+    Logger.error(`error response: ${statusCode}`, new Error(message), { type, requestId, param })
   }
 
   private addCORSHeaders(res: http.ServerResponse): void {
