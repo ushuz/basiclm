@@ -41,7 +41,7 @@ export class RequestHandler {
         return
       }
 
-      // check vs code language model access
+      // check vscode language model access
       const models = await vscode.lm.selectChatModels()
       if (models.length === 0) {
         this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
@@ -54,17 +54,17 @@ export class RequestHandler {
         this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
-      Logger.debug("selected vs code model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
+      Logger.debug("selected model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
 
-      // convert openai messages to vs code format
+      // convert openai messages to vscode format
       const vsCodeMessages = this.convertOpenAIMessagesToVSCode(request.messages)
       Logger.debug("converted OpenAI messages", { messageCount: vsCodeMessages.length, requestId })
 
-      // convert tools to vs code format
+      // convert tools to vscode format
       const vsCodeTools = this.convertOpenAIToolsToVSCode(request.tools)
       Logger.debug("converted OpenAI tools", { toolCount: vsCodeTools.length, requestId })
 
-      // make request to vs code language model api
+      // make request to vscode language model api
       const options = { tools: vsCodeTools }
       const token = new vscode.CancellationTokenSource().token
 
@@ -118,7 +118,7 @@ export class RequestHandler {
         return
       }
 
-      // check vs code language model access
+      // check vscode language model access
       const models = await vscode.lm.selectChatModels()
       if (models.length === 0) {
         this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
@@ -131,17 +131,17 @@ export class RequestHandler {
         this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
         return
       }
-      Logger.debug("selected vs code model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
+      Logger.debug("selected model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
 
-      // convert anthropic messages to vs code format
+      // convert anthropic messages to vscode format
       const vsCodeMessages = this.convertAnthropicMessagesToVSCode(request.messages, request.system)
       Logger.debug("converted Anthropic messages", { messageCount: vsCodeMessages.length, requestId })
 
-      // convert tools to vs code format
+      // convert tools to vscode format
       const vsCodeTools = this.convertAnthropicToolsToVSCode(request.tools)
       Logger.debug("converted Anthropic tools", { toolCount: vsCodeTools.length, requestId })
 
-      // make request to vs code language model api
+      // make request to vscode language model api
       const options = { tools: vsCodeTools }
       const token = new vscode.CancellationTokenSource().token
 
