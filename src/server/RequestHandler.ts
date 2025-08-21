@@ -379,20 +379,6 @@ export class RequestHandler {
     }))
   }
 
-  private async extractToolCallsFromVSCodeResponse(response: vscode.LanguageModelChatResponse): Promise<vscode.LanguageModelToolCallPart[]> {
-    const toolCalls: vscode.LanguageModelToolCallPart[] = []
-    
-    // process the response stream to find LanguageModelToolCallPart objects
-    for await (const part of response.stream) {
-      // check if this part is a LanguageModelToolCallPart
-      if (part instanceof vscode.LanguageModelToolCallPart) {
-        toolCalls.push(part)
-      }
-    }
-    
-    return toolCalls
-  }
-
   private async handleOpenAIStreamingResponse(
     response: vscode.LanguageModelChatResponse,
     res: http.ServerResponse,
