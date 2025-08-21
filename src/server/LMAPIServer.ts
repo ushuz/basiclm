@@ -18,7 +18,7 @@ export class LMAPIServer {
     this.state = {
       isRunning: false,
       requestCount: 0,
-      errorCount: 0
+      errorCount: 0,
     }
 
     // listen for configuration changes
@@ -53,8 +53,8 @@ export class LMAPIServer {
             port: serverPort,
             endpoints: {
               openai: `http://${serverHost}:${serverPort}${API_ENDPOINTS.OPENAI_CHAT_COMPLETIONS}`,
-              anthropic: `http://${serverHost}:${serverPort}${API_ENDPOINTS.ANTHROPIC_MESSAGES}`
-            }
+              anthropic: `http://${serverHost}:${serverPort}${API_ENDPOINTS.ANTHROPIC_MESSAGES}`,
+            },
           })
 
           resolve()
@@ -206,8 +206,8 @@ export class LMAPIServer {
         message,
         type: "api_error",
         code: statusCode,
-        requestId
-      }
+        requestId,
+      },
     }, null, 2))
   }
 
@@ -222,7 +222,7 @@ export class LMAPIServer {
       port: config.get<number>("port", DEFAULT_CONFIG.port),
       host: config.get<string>("host", DEFAULT_CONFIG.host),
       autoStart: config.get<boolean>("autoStart", DEFAULT_CONFIG.autoStart),
-      enableLogging: config.get<boolean>("enableLogging", DEFAULT_CONFIG.enableLogging)
+      enableLogging: config.get<boolean>("enableLogging", DEFAULT_CONFIG.enableLogging),
     }
   }
 
@@ -235,7 +235,7 @@ export class LMAPIServer {
 
       Logger.info("configuration changed", {
         old: oldConfig,
-        new: newConfig
+        new: newConfig,
       })
 
       // restart server if critical settings changed

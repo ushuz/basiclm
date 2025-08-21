@@ -11,7 +11,7 @@ import {
   OpenAITool,
   AnthropicTool,
   OpenAIToolCall,
-  AnthropicContent
+  AnthropicContent,
 } from "../types"
 import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
 
@@ -197,8 +197,8 @@ export class RequestHandler {
           owned_by: model.vendor || "unknown",
           permission: [],
           root: model.id,
-          parent: null
-        }))
+          parent: null,
+        })),
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
@@ -232,17 +232,17 @@ export class RequestHandler {
           running: serverState.isRunning,
           uptime: serverState.startTime ? Date.now() - serverState.startTime.getTime() : 0,
           requests: serverState.requestCount,
-          errors: serverState.errorCount
+          errors: serverState.errorCount,
         },
         languageModels: {
           available: models.length,
-          accessible: models.length > 0
+          accessible: models.length > 0,
         },
         endpoints: {
           openai: "/v1/chat/completions",
-          anthropic: "/v1/messages"
+          anthropic: "/v1/messages",
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
@@ -335,7 +335,7 @@ export class RequestHandler {
     return tools.map(tool => ({
       name: tool.function.name,
       description: tool.function.description,
-      inputSchema: tool.function.parameters
+      inputSchema: tool.function.parameters,
     }))
   }
 
@@ -347,7 +347,7 @@ export class RequestHandler {
     return tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: tool.input_schema
+      inputSchema: tool.input_schema,
     }))
   }
 
@@ -361,8 +361,8 @@ export class RequestHandler {
       type: "function" as const,
       function: {
         name: call.name,
-        arguments: JSON.stringify(call.input)
-      }
+        arguments: JSON.stringify(call.input),
+      },
     }))
   }
 
@@ -375,7 +375,7 @@ export class RequestHandler {
       type: "tool_use" as const,
       id: call.callId,
       name: call.name,
-      input: call.input
+      input: call.input,
     }))
   }
 
@@ -425,10 +425,10 @@ export class RequestHandler {
               index: 0,
               delta: {
                 role: chunkIndex === 0 ? "assistant" : undefined,
-                content: textChunk
+                content: textChunk,
               },
-              finish_reason: null
-            }]
+              finish_reason: null,
+            }],
           }
 
           res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
@@ -453,10 +453,10 @@ export class RequestHandler {
           choices: [{
             index: 0,
             delta: {
-              tool_calls: openAIToolCalls
+              tool_calls: openAIToolCalls,
             },
-            finish_reason: null
-          }]
+            finish_reason: null,
+          }],
         }
         res.write(`data: ${JSON.stringify(toolCallChunk)}\n\n`)
       }
@@ -470,8 +470,8 @@ export class RequestHandler {
         choices: [{
           index: 0,
           delta: {},
-          finish_reason: openAIToolCalls.length > 0 ? "tool_calls" : "stop"
-        }]
+          finish_reason: openAIToolCalls.length > 0 ? "tool_calls" : "stop",
+        }],
       }
 
       res.write(`data: ${JSON.stringify(finalChunk)}\n\n`)
@@ -480,7 +480,7 @@ export class RequestHandler {
       Logger.debug("OpenAI streaming response completed", { 
         requestId, 
         contentLength: content.length,
-        toolCallsCount: toolCalls.length 
+        toolCallsCount: toolCalls.length, 
       })
 
     } catch (error) {
@@ -488,8 +488,8 @@ export class RequestHandler {
       const errorEvent = {
         error: {
           message: "stream processing error",
-          type: ERROR_CODES.API_ERROR
-        }
+          type: ERROR_CODES.API_ERROR,
+        },
       }
       res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
     } finally {
@@ -527,7 +527,7 @@ export class RequestHandler {
       
       const message: any = {
         role: "assistant",
-        content: content || null
+        content: content || null,
       }
 
       let finishReason: string = "stop"
@@ -545,13 +545,13 @@ export class RequestHandler {
         choices: [{
           index: 0,
           message: message,
-          finish_reason: finishReason as any
+          finish_reason: finishReason as any,
         }],
         usage: {
           prompt_tokens: this.estimateTokens(request.messages),
           completion_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
-          total_tokens: 0
-        }
+          total_tokens: 0,
+        },
       }
 
       completionResponse.usage.total_tokens =
@@ -564,7 +564,7 @@ export class RequestHandler {
         requestId,
         contentLength: content.length,
         totalTokens: completionResponse.usage.total_tokens,
-        toolCallsCount: toolCalls.length
+        toolCallsCount: toolCalls.length,
       })
 
     } catch (error) {
@@ -600,8 +600,8 @@ export class RequestHandler {
           model: request.model,
           stop_reason: null,
           stop_sequence: null,
-          usage: { input_tokens: 0, output_tokens: 0 }
-        }
+          usage: { input_tokens: 0, output_tokens: 0 },
+        },
       }
       res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
@@ -611,8 +611,8 @@ export class RequestHandler {
         index: blockIndex,
         content_block: {
           type: "text",
-          text: ""
-        }
+          text: "",
+        },
       }
       res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
@@ -628,8 +628,8 @@ export class RequestHandler {
             index: blockIndex,
             delta: {
               type: "text_delta",
-              text: textChunk
-            }
+              text: textChunk,
+            },
           }
 
           res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
@@ -643,7 +643,7 @@ export class RequestHandler {
       // send content_block_stop event for text
       const contentBlockStopEvent = {
         type: "content_block_stop",
-        index: blockIndex
+        index: blockIndex,
       }
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
       blockIndex++
@@ -660,15 +660,15 @@ export class RequestHandler {
             type: "tool_use",
             id: toolCall.id,
             name: toolCall.name,
-            input: toolCall.input
-          }
+            input: toolCall.input,
+          },
         }
         res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
 
         // Send tool use content block stop event
         const toolBlockStopEvent = {
           type: "content_block_stop",
-          index: blockIndex
+          index: blockIndex,
         }
         res.write(`data: ${JSON.stringify(toolBlockStopEvent)}\n\n`)
         blockIndex++
@@ -676,14 +676,14 @@ export class RequestHandler {
 
       // send final message_stop event
       const messageStopEvent = {
-        type: "message_stop"
+        type: "message_stop",
       }
       res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
       Logger.debug("Anthropic streaming response completed", { 
         requestId, 
         contentLength: content.length,
-        toolCallsCount: anthropicToolCalls.length 
+        toolCallsCount: anthropicToolCalls.length, 
       })
 
     } catch (error) {
@@ -692,8 +692,8 @@ export class RequestHandler {
         type: "error",
         error: {
           message: "stream processing error",
-          type: ERROR_CODES.API_ERROR
-        }
+          type: ERROR_CODES.API_ERROR,
+        },
       }
       res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
     } finally {
@@ -735,7 +735,7 @@ export class RequestHandler {
       if (content) {
         responseContent.push({
           type: "text",
-          text: content
+          text: content,
         })
       }
       
@@ -756,8 +756,8 @@ export class RequestHandler {
         stop_reason: stopReason as any,
         usage: {
           input_tokens: this.estimateTokens(request.messages),
-          output_tokens: this.estimateTokens([{ role: "assistant", content: content }])
-        }
+          output_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
+        },
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
@@ -768,7 +768,7 @@ export class RequestHandler {
         contentLength: content.length,
         inputTokens: messageResponse.usage.input_tokens,
         outputTokens: messageResponse.usage.output_tokens,
-        toolCallsCount: anthropicToolCalls.length
+        toolCallsCount: anthropicToolCalls.length,
       })
 
     } catch (error) {
@@ -831,8 +831,8 @@ export class RequestHandler {
       error: {
         message,
         type,
-        code: statusCode.toString()
-      }
+        code: statusCode.toString(),
+      },
     }
 
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
