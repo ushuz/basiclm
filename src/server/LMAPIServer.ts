@@ -3,7 +3,7 @@ import * as vscode from "vscode"
 import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
-import { ServerConfig, ServerState, APIEndpointType, OpenAIErrorResponse, AnthropicErrorResponse } from "../types"
+import { ServerConfig, ServerState, OpenAIErrorResponse, AnthropicErrorResponse } from "../types"
 import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
 
 export class LMAPIServer {
@@ -152,7 +152,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId, APIEndpointType.OPENAI)
+        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -185,9 +185,7 @@ export class LMAPIServer {
         break
 
       default:
-        // Determine API type from pathname for proper error format
-        const apiType = pathname.includes('/messages') ? APIEndpointType.ANTHROPIC : APIEndpointType.OPENAI
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, apiType)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId, pathname)
     }
   }
 
@@ -202,15 +200,17 @@ export class LMAPIServer {
     statusCode: number, 
     message: string, 
     requestId?: string, 
-    apiType: APIEndpointType = APIEndpointType.OPENAI
+    pathname?: string
   ): void {
     if (res.headersSent) {
       return
     }
 
+    // Auto-detect API type based on pathname
+    const isAnthropicAPI = pathname?.includes("/messages") || false
     let errorResponse: OpenAIErrorResponse | AnthropicErrorResponse
 
-    if (apiType === APIEndpointType.ANTHROPIC) {
+    if (isAnthropicAPI) {
       errorResponse = {
         type: "error",
         error: {

@@ -167,8 +167,3 @@ export interface AnthropicTool {
   description: string
   input_schema?: object
 }
-
-export enum APIEndpointType {
-  OPENAI = "openai",
-  ANTHROPIC = "anthropic"
-}
