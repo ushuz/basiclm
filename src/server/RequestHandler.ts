@@ -131,47 +131,6 @@ export class RequestHandler {
     }
   }
 
-  public async handleHealth(
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-    requestId: string,
-    serverState: ServerState
-  ): Promise<void> {
-    try {
-      if (req.method !== "GET") {
-        this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
-        return
-      }
-
-      const models = await vscode.lm.selectChatModels()
-
-      const healthResponse = {
-        status: "healthy",
-        server: {
-          running: serverState.isRunning,
-          uptime: serverState.startTime ? Date.now() - serverState.startTime.getTime() : 0,
-          requests: serverState.requestCount,
-          errors: serverState.errorCount,
-        },
-        languageModels: {
-          available: models.length,
-          accessible: models.length > 0,
-        },
-        endpoints: {
-          anthropic: "/v1/messages",
-        },
-        timestamp: new Date().toISOString(),
-      }
-
-      res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
-      res.end(JSON.stringify(healthResponse, null, 2))
-
-    } catch (error) {
-      Logger.error("error handling health check", error as Error, { requestId })
-      this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "health check failed", ERROR_CODES.API_ERROR, requestId)
-    }
-  }
-
   private selectModel(models: vscode.LanguageModelChat[], requestedModel: string): vscode.LanguageModelChat | null {
     // exact match by id
     let match = models.find(m => m.id === requestedModel)
@@ -241,7 +200,6 @@ export class RequestHandler {
 
     return vsCodeMessages
   }
-
 
   private convertAnthropicToolsToVSCode(tools?: AnthropicTool[]): vscode.LanguageModelChatTool[] {
     if (!tools || !Array.isArray(tools)) {

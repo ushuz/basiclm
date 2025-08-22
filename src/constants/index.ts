@@ -8,7 +8,6 @@ export const DEFAULT_CONFIG = {
 export const API_ENDPOINTS = {
   ANTHROPIC_MESSAGES: "/v1/messages",
   MODELS: "/v1/models",
-  HEALTH: "/health",
 } as const
 
 export const HTTP_STATUS = {

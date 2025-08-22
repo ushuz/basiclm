@@ -175,10 +175,6 @@ export class LMAPIServer {
         await this.requestHandler.handleModels(req, res, requestId)
         break
 
-      case API_ENDPOINTS.HEALTH:
-        await this.requestHandler.handleHealth(req, res, requestId, this.state)
-        break
-
       default:
         this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
     }
