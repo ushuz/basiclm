@@ -296,33 +296,56 @@ export class RequestHandler {
   private convertAnthropicMessagesToVSCode(messages: any[], system?: string): vscode.LanguageModelChatMessage[] {
     const vsCodeMessages: vscode.LanguageModelChatMessage[] = []
 
-    // add system message if provided
-    if (system) {
-      vsCodeMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${system}`))
+    // add system message
+    if (system) vsCodeMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${system}`))
+
+    const convertToolResultContent = (content: any) => {
+      if (typeof content === "string") {
+        return [new vscode.LanguageModelTextPart(content)]
+      }
+      if (Array.isArray(content)) {
+        const textParts = []
+        for (const c of content) {
+          textParts.push(new vscode.LanguageModelTextPart(c.text || ""))
+        }
+        return textParts
+      }
+      return [new vscode.LanguageModelTextPart("")]
     }
 
-    // convert messages
-    messages.forEach(msg => {
-      const role = msg.role === "user" ? vscode.LanguageModelChatMessageRole.User :
-        vscode.LanguageModelChatMessageRole.Assistant
+    const partHandlers = {
+      text: (part: any) => new vscode.LanguageModelTextPart(part.text),
+      tool_result: (part: any) => new vscode.LanguageModelToolResultPart(
+        part.tool_use_id,
+        convertToolResultContent(part.content)
+      ),
+      tool_use: (part: any) => new vscode.LanguageModelToolCallPart(part.id, part.name, part.input)
+    }
 
-      let content = ""
+    const messageConstructors = {
+      user: vscode.LanguageModelChatMessage.User,
+      assistant: vscode.LanguageModelChatMessage.Assistant
+    }
+
+    for (const msg of messages) {
+      const constructor = messageConstructors[msg.role as keyof typeof messageConstructors]
+
+      let content
       if (typeof msg.content === "string") {
         content = msg.content
-      } else if (Array.isArray(msg.content)) {
-        // handle multimodal content - extract text for now
-        content = msg.content
-          .filter((part: any) => part.type === "text")
-          .map((part: any) => part.text)
-          .join("\n")
+      }
+      if (Array.isArray(msg.content)) {
+        content = []
+        for (const part of msg.content) {
+          const handler = partHandlers[part.type as keyof typeof partHandlers]
+          if (handler) {
+            content.push(handler(part))
+          }
+        }
       }
 
-      if (role === vscode.LanguageModelChatMessageRole.User) {
-        vsCodeMessages.push(vscode.LanguageModelChatMessage.User(content))
-      } else {
-        vsCodeMessages.push(vscode.LanguageModelChatMessage.Assistant(content))
-      }
-    })
+      vsCodeMessages.push(constructor(content))
+    }
 
     return vsCodeMessages
   }
