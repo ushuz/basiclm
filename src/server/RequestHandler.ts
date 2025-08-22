@@ -676,11 +676,23 @@ export class RequestHandler {
             type: "tool_use",
             id: toolCall.id,
             name: toolCall.name,
-            input: toolCall.input,
+            input: {},
           },
         }
         res.write(`event: content_block_start\n`)
         res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
+
+        // send tool use content delta event
+        const toolBlockDeltaEvent = {
+          type: "content_block_delta",
+          index: blockIndex,
+          delta: {
+            type: "input_json_delta",
+            partial_json: JSON.stringify(toolCall.input),
+          },
+        }
+        res.write(`event: content_block_delta\n`)
+        res.write(`data: ${JSON.stringify(toolBlockDeltaEvent)}\n\n`)
 
         // send tool use content block stop event
         const toolBlockStopEvent = {
