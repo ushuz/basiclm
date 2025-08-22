@@ -25,17 +25,17 @@
     "commands": [
       {
         "command": "basiclm.start",
-        "title": "Start BasicLM Server",
+        "title": "Start Server",
         "category": "BasicLM"
       },
       {
         "command": "basiclm.stop",
-        "title": "Stop BasicLM Server",
+        "title": "Stop Server",
         "category": "BasicLM"
       },
       {
         "command": "basiclm.restart",
-        "title": "Restart BasicLM Server",
+        "title": "Restart Server",
         "category": "BasicLM"
       },
       {

@@ -13,10 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
   server = new LMAPIServer()
 
   // create status bar item
-  statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    100
-  )
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
   statusBarItem.command = "basiclm.status"
   context.subscriptions.push(statusBarItem)
 
@@ -49,6 +46,8 @@ export function deactivate() {
   if (statusBarItem) {
     statusBarItem.dispose()
   }
+
+  Logger.info("BasicLM extension deactivated")
 }
 
 function registerCommands(context: vscode.ExtensionContext) {
@@ -64,7 +63,7 @@ function registerCommands(context: vscode.ExtensionContext) {
       updateStatusBar()
       vscode.window.showInformationMessage("BasicLM started successfully")
     } catch (error) {
-      const errorMessage = `Failed to start BasicLM: ${(error as Error).message}`
+      const errorMessage = `BasicLM failed to start: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
       vscode.window.showErrorMessage(errorMessage)
     }
@@ -82,7 +81,7 @@ function registerCommands(context: vscode.ExtensionContext) {
       updateStatusBar()
       vscode.window.showInformationMessage("BasicLM stopped")
     } catch (error) {
-      const errorMessage = `Failed to stop BasicLM: ${(error as Error).message}`
+      const errorMessage = `BasicLM failed to stop: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
       vscode.window.showErrorMessage(errorMessage)
     }
@@ -95,22 +94,26 @@ function registerCommands(context: vscode.ExtensionContext) {
       updateStatusBar()
       vscode.window.showInformationMessage("BasicLM restarted")
     } catch (error) {
-      const errorMessage = `Failed to restart BasicLM: ${(error as Error).message}`
+      const errorMessage = `BasicLM failed to restart: ${(error as Error).message}`
       Logger.error(errorMessage, error as Error)
       vscode.window.showErrorMessage(errorMessage)
     }
   })
 
-  // status command
-  const statusCommand = vscode.commands.registerCommand("basiclm.status", async () => {
-    showServerStatus()
+  // configure command
+  const configureCommand = vscode.commands.registerCommand("basiclm.configure", async () => {
+    await vscode.commands.executeCommand("workbench.action.openSettings", "basiclm")
   })
+
+  // status command
+  const statusCommand = vscode.commands.registerCommand("basiclm.status", showServerStatus)
 
   context.subscriptions.push(
     startCommand,
     stopCommand,
     restartCommand,
-    statusCommand
+    configureCommand,
+    statusCommand,
   )
 }
 
@@ -119,11 +122,11 @@ function updateStatusBar() {
 
   if (state.isRunning) {
     statusBarItem.text = `$(server) BasicLM :${state.port}`
-    statusBarItem.tooltip = `BasicLM is running on http://${state.host}:${state.port}\nClick for details`
+    statusBarItem.tooltip = `BasicLM is running: http://${state.host}:${state.port}`
     statusBarItem.backgroundColor = undefined
   } else {
     statusBarItem.text = "$(server) BasicLM (stopped)"
-    statusBarItem.tooltip = "BasicLM is stopped\nClick to start"
+    statusBarItem.tooltip = "BasicLM is stopped"
     statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground")
   }
 
@@ -132,98 +135,48 @@ function updateStatusBar() {
 
 async function showServerStatus() {
   const state = server.getState()
+  let items, status
 
   if (state.isRunning) {
-    const uptime = state.startTime ? Math.floor((Date.now() - state.startTime.getTime()) / 1000) : 0
-    const uptimeStr = formatUptime(uptime)
-
-    const items = [
+    items = [
       {
         label: "Stop Server",
-        description: "Stop the BasicLM",
-        action: "stop",
+        action: "basiclm.stop",
       },
       {
         label: "Restart Server",
-        description: "Restart the BasicLM",
-        action: "restart",
-      },
-      {
-        label: "Copy Anthropic URL",
-        description: `http://${state.host}:${state.port}/v1/messages`,
-        action: "copy-anthropic-url",
-      },
-    ]
-
-    const selected = await vscode.window.showQuickPick(items, {
-      title: "BasicLM Status",
-      placeHolder: `Running on http://${state.host}:${state.port} | Uptime: ${uptimeStr} | Requests: ${state.requestCount}`,
-    })
-
-    if (selected) {
-      await handleStatusAction(selected.action)
-    }
-  } else {
-    const config = server.getConfig()
-    const items = [
-      {
-        label: "Start Server",
-        description: `Start on http://${config.host}:${config.port}`,
-        action: "start",
+        action: "basiclm.restart",
       },
       {
         label: "Configure",
-        description: "Open extension settings",
-        action: "configure",
+        description: "Open VS Code settings for BasicLM",
+        action: "basiclm.configure",
       },
     ]
-
-    const selected = await vscode.window.showQuickPick(items, {
-      title: "BasicLM Status",
-      placeHolder: "Stopped",
-    })
-
-    if (selected) {
-      await handleStatusAction(selected.action)
-    }
-  }
-}
-
-async function handleStatusAction(action: string) {
-  switch (action) {
-    case "start":
-      await vscode.commands.executeCommand("basiclm.start")
-      break
-    case "stop":
-      await vscode.commands.executeCommand("basiclm.stop")
-      break
-    case "restart":
-      await vscode.commands.executeCommand("basiclm.restart")
-      break
-    case "configure":
-      await vscode.commands.executeCommand("workbench.action.openSettings", "basiclm")
-      break
-    case "copy-anthropic-url":
-      const stateAnthropic = server.getState()
-      const anthropicUrl = `http://${stateAnthropic.host}:${stateAnthropic.port}/v1/messages`
-      await vscode.env.clipboard.writeText(anthropicUrl)
-      vscode.window.showInformationMessage("Copied Anthropic URL to clipboard")
-      break
-  }
-}
-
-function formatUptime(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const remainingSeconds = seconds % 60
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${remainingSeconds}s`
-  } else if (minutes > 0) {
-    return `${minutes}m ${remainingSeconds}s`
+    status = `Running on http://${state.host}:${state.port} | Requests: ${state.requestCount}`
   } else {
-    return `${remainingSeconds}s`
+    const config = server.getConfig()
+    items = [
+      {
+        label: "Start Server",
+        description: `Start on http://${config.host}:${config.port}`,
+        action: "basiclm.start",
+      },
+      {
+        label: "Configure",
+        description: "Open VS Code settings for BasicLM",
+        action: "basiclm.configure",
+      },
+    ]
+    status = "Stopped"
   }
+
+  const selected = await vscode.window.showQuickPick(items, {
+    title: "BasicLM Status",
+    placeHolder: status,
+  })
+
+  if (selected) await vscode.commands.executeCommand(selected.action)
 }
 
 async function checkLanguageModelAccess(): Promise<boolean> {
