@@ -1,4 +1,5 @@
 import * as vscode from "vscode"
+import { DEFAULT_CONFIG } from "../constants"
 
 class LoggerService {
   private outputChannel: vscode.OutputChannel
@@ -33,8 +34,8 @@ class LoggerService {
   }
 
   debug(message: string, context?: any): void {
-    const config = vscode.workspace.getConfiguration("basiclmapi")
-    if (config.get<boolean>("enableLogging", true)) {
+    const config = vscode.workspace.getConfiguration("basiclm")
+    if (config.get<boolean>("enableLogging", DEFAULT_CONFIG.enableLogging)) {
       const formatted = this.formatMessage("DEBUG", message, context)
       this.outputChannel.appendLine(formatted)
       console.debug(formatted)

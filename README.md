@@ -46,10 +46,10 @@ A VS Code extension that bridges the VS Code Language Model API to OpenAI and An
 
 ## Configuration
 
-- `basiclmapi.port`: Server port (default: 8099)
-- `basiclmapi.host`: Server host (default: 127.0.0.1)
-- `basiclmapi.autoStart`: Auto-start server when VS Code starts
-- `basiclmapi.enableLogging`: Enable detailed logging
+- `basiclm.port`: Server port (default: 8099)
+- `basiclm.host`: Server host (default: 127.0.0.1)
+- `basiclm.autoStart`: Auto-start server when VS Code starts
+- `basiclm.enableLogging`: Enable detailed logging
 
 ## API Endpoints
 

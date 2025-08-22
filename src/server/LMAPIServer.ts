@@ -217,7 +217,7 @@ export class LMAPIServer {
   }
 
   private loadConfig(): ServerConfig {
-    const config = vscode.workspace.getConfiguration("basiclmapi")
+    const config = vscode.workspace.getConfiguration("basiclm")
 
     return {
       port: config.get<number>("port", DEFAULT_CONFIG.port),
@@ -228,7 +228,7 @@ export class LMAPIServer {
   }
 
   private onConfigurationChanged(event: vscode.ConfigurationChangeEvent): void {
-    if (event.affectsConfiguration("basiclmapi")) {
+    if (event.affectsConfiguration("basiclm")) {
       const newConfig = this.loadConfig()
       const oldConfig = this.config
 

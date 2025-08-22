@@ -1,5 +1,5 @@
 {
-  "name": "basiclmapi",
+  "name": "basiclm",
   "displayName": "BasicLM",
   "description": "Bridge VS Code Language Model API to OpenAI and Anthropic compatible HTTP endpoints",
   "version": "0.1.0",
@@ -24,22 +24,22 @@
   "contributes": {
     "commands": [
       {
-        "command": "basiclmapi.start",
+        "command": "basiclm.start",
         "title": "Start BasicLM Server",
         "category": "BasicLM"
       },
       {
-        "command": "basiclmapi.stop",
+        "command": "basiclm.stop",
         "title": "Stop BasicLM Server",
         "category": "BasicLM"
       },
       {
-        "command": "basiclmapi.restart",
+        "command": "basiclm.restart",
         "title": "Restart BasicLM Server",
         "category": "BasicLM"
       },
       {
-        "command": "basiclmapi.status",
+        "command": "basiclm.status",
         "title": "Show Server Status",
         "category": "BasicLM"
       }
@@ -47,26 +47,26 @@
     "configuration": {
       "title": "BasicLM",
       "properties": {
-        "basiclmapi.port": {
+        "basiclm.port": {
           "type": "number",
           "default": 8099,
           "minimum": 1024,
           "maximum": 65535,
           "description": "HTTP server port"
         },
-        "basiclmapi.host": {
+        "basiclm.host": {
           "type": "string",
           "default": "127.0.0.1",
           "description": "HTTP server host (127.0.0.1 for localhost only)"
         },
-        "basiclmapi.autoStart": {
-          "type": "boolean",
-          "default": false,
-          "description": "Automatically start server when VS Code starts"
-        },
-        "basiclmapi.enableLogging": {
+        "basiclm.autoStart": {
           "type": "boolean",
           "default": true,
+          "description": "Automatically start server when VS Code starts"
+        },
+        "basiclm.enableLogging": {
+          "type": "boolean",
+          "default": false,
           "description": "Enable detailed logging"
         }
       }
@@ -93,11 +93,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ushuz/basiclmapi"
+    "url": "https://github.com/ushuz/basiclm"
   },
   "bugs": {
-    "url": "https://github.com/ushuz/basiclmapi/issues"
+    "url": "https://github.com/ushuz/basiclm/issues"
   },
-  "homepage": "https://github.com/ushuz/basiclmapi#readme",
+  "homepage": "https://github.com/ushuz/basiclm#readme",
   "license": "MIT"
 }

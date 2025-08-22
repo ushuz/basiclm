@@ -1,6 +1,7 @@
 import * as vscode from "vscode"
 import { LMAPIServer } from "./server/LMAPIServer"
 import { Logger } from "./utils/Logger"
+import { DEFAULT_CONFIG } from "./constants"
 
 let server: LMAPIServer
 let statusBarItem: vscode.StatusBarItem
@@ -16,18 +17,18 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.StatusBarAlignment.Right,
     100
   )
-  statusBarItem.command = "basiclmapi.status"
+  statusBarItem.command = "basiclm.status"
   context.subscriptions.push(statusBarItem)
 
   // register commands
   registerCommands(context)
 
   // auto-start if configured
-  const config = vscode.workspace.getConfiguration("basiclmapi")
-  if (config.get<boolean>("autoStart", false)) {
+  const config = vscode.workspace.getConfiguration("basiclm")
+  if (config.get<boolean>("autoStart", DEFAULT_CONFIG.autoStart)) {
     checkLanguageModelAccess().then(hasAccess => {
       if (hasAccess) {
-        vscode.commands.executeCommand("basiclmapi.start")
+        vscode.commands.executeCommand("basiclm.start")
       } else {
         Logger.warn("auto-start skipped: Language Model access not available")
       }
@@ -52,7 +53,7 @@ export function deactivate() {
 
 function registerCommands(context: vscode.ExtensionContext) {
   // start server command
-  const startCommand = vscode.commands.registerCommand("basiclmapi.start", async () => {
+  const startCommand = vscode.commands.registerCommand("basiclm.start", async () => {
     try {
       if (server.isRunning()) {
         vscode.window.showWarningMessage("BasicLM is already running")
@@ -70,7 +71,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   })
 
   // stop server command
-  const stopCommand = vscode.commands.registerCommand("basiclmapi.stop", async () => {
+  const stopCommand = vscode.commands.registerCommand("basiclm.stop", async () => {
     try {
       if (!server.isRunning()) {
         vscode.window.showWarningMessage("BasicLM is not running")
@@ -88,7 +89,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   })
 
   // restart server command
-  const restartCommand = vscode.commands.registerCommand("basiclmapi.restart", async () => {
+  const restartCommand = vscode.commands.registerCommand("basiclm.restart", async () => {
     try {
       await server.restart()
       updateStatusBar()
@@ -101,7 +102,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   })
 
   // status command
-  const statusCommand = vscode.commands.registerCommand("basiclmapi.status", async () => {
+  const statusCommand = vscode.commands.registerCommand("basiclm.status", async () => {
     showServerStatus()
   })
 
@@ -196,16 +197,16 @@ async function showServerStatus() {
 async function handleStatusAction(action: string) {
   switch (action) {
     case "start":
-      await vscode.commands.executeCommand("basiclmapi.start")
+      await vscode.commands.executeCommand("basiclm.start")
       break
     case "stop":
-      await vscode.commands.executeCommand("basiclmapi.stop")
+      await vscode.commands.executeCommand("basiclm.stop")
       break
     case "restart":
-      await vscode.commands.executeCommand("basiclmapi.restart")
+      await vscode.commands.executeCommand("basiclm.restart")
       break
     case "configure":
-      await vscode.commands.executeCommand("workbench.action.openSettings", "basiclmapi")
+      await vscode.commands.executeCommand("workbench.action.openSettings", "basiclm")
       break
     case "copy-openai-url":
       const state = server.getState()
