@@ -51,7 +51,7 @@ export class RequestHandler {
       // select model based on request
       const model = this.selectModel(models, request.model)
       if (!model) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, `model "${request.model}" not found`, ERROR_CODES.NOT_FOUND_ERROR, requestId)
         return
       }
       Logger.debug("selected model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
@@ -83,7 +83,7 @@ export class RequestHandler {
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId)
         } else {
-          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
+          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
         }
       }
 
@@ -128,7 +128,7 @@ export class RequestHandler {
       // select model based on request
       const model = this.selectModel(models, request.model)
       if (!model) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, `model "${request.model}" not available`, ERROR_CODES.INVALID_REQUEST, requestId)
+        this.sendError(res, HTTP_STATUS.NOT_FOUND, `model "${request.model}" not found`, ERROR_CODES.NOT_FOUND_ERROR, requestId)
         return
       }
       Logger.debug("selected model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
@@ -160,7 +160,7 @@ export class RequestHandler {
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId)
         } else {
-          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `Language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
+          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
         }
       }
 
