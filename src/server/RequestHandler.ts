@@ -590,6 +590,7 @@ export class RequestHandler {
           usage: { input_tokens: 0, output_tokens: 0 },
         },
       }
+      res.write(`event: message_start\n`)
       res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
       // send content_block_start event for text
@@ -601,6 +602,7 @@ export class RequestHandler {
           text: "",
         },
       }
+      res.write(`event: content_block_start\n`)
       res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
       // process the response stream to get both text and tool calls
@@ -619,6 +621,7 @@ export class RequestHandler {
             },
           }
 
+          res.write(`event: content_block_delta\n`)
           res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
         }
         // check if this is a tool call part
@@ -632,11 +635,14 @@ export class RequestHandler {
         type: "content_block_stop",
         index: blockIndex,
       }
+      res.write(`event: content_block_stop\n`)
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
       blockIndex++
 
       // check for tool calls and add them as additional content blocks
       const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
+
+      Logger.debug("tool calls", { anthropicToolCalls })
 
       for (const toolCall of anthropicToolCalls) {
         // send tool use content block start event
@@ -650,6 +656,7 @@ export class RequestHandler {
             input: toolCall.input,
           },
         }
+        res.write(`event: content_block_start\n`)
         res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
 
         // send tool use content block stop event
@@ -657,14 +664,30 @@ export class RequestHandler {
           type: "content_block_stop",
           index: blockIndex,
         }
+        res.write(`event: content_block_stop\n`)
         res.write(`data: ${JSON.stringify(toolBlockStopEvent)}\n\n`)
         blockIndex++
       }
+
+      // send message_delta event with stop_reason
+      const stopReason = anthropicToolCalls.length > 0 ? "tool_use" : "end_turn"
+      const messageDeltaEvent = {
+        type: "message_delta",
+        delta: {
+          stop_reason: stopReason,
+        },
+        usage: {
+          output_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
+        },
+      }
+      res.write(`event: message_delta\n`)
+      res.write(`data: ${JSON.stringify(messageDeltaEvent)}\n\n`)
 
       // send final message_stop event
       const messageStopEvent = {
         type: "message_stop",
       }
+      res.write(`event: message_stop\n`)
       res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
       Logger.debug("Anthropic streaming response completed", {
@@ -682,6 +705,7 @@ export class RequestHandler {
           type: ERROR_CODES.API_ERROR,
         },
       }
+      res.write(`event: error\n`)
       res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
     } finally {
       res.end()
