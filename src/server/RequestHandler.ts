@@ -2,15 +2,11 @@ import * as http from "http"
 import * as vscode from "vscode"
 import { Logger } from "../utils/Logger"
 import {
-  OpenAIChatCompletionRequest,
-  OpenAIChatCompletionResponse,
   AnthropicMessageRequest,
   AnthropicMessageResponse,
   ServerState,
   ErrorResponse,
-  OpenAITool,
   AnthropicTool,
-  OpenAIToolCall,
   AnthropicContent,
 } from "../types"
 import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
@@ -18,83 +14,6 @@ import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constan
 export class RequestHandler {
 
   constructor() {}
-
-  public async handleOpenAIChatCompletions(
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-    requestId: string
-  ): Promise<void> {
-    try {
-      if (req.method !== "POST") {
-        this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, "method not allowed", ERROR_CODES.INVALID_REQUEST, requestId)
-        return
-      }
-
-      Logger.debug("processing openai chat completions request", { requestId })
-
-      const body = await this.readRequestBody(req)
-      const request: OpenAIChatCompletionRequest = JSON.parse(body)
-
-      // validate request
-      if (!request.model || !request.messages || !Array.isArray(request.messages)) {
-        this.sendError(res, HTTP_STATUS.BAD_REQUEST, "invalid request: model and messages are required", ERROR_CODES.INVALID_REQUEST, requestId)
-        return
-      }
-
-      // check vscode language model access
-      const models = await vscode.lm.selectChatModels()
-      if (models.length === 0) {
-        this.sendError(res, HTTP_STATUS.SERVICE_UNAVAILABLE, "no language models available", ERROR_CODES.API_ERROR, requestId)
-        return
-      }
-
-      // select model based on request
-      const model = this.selectModel(models, request.model)
-      if (!model) {
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, `model "${request.model}" not found`, ERROR_CODES.NOT_FOUND_ERROR, requestId)
-        return
-      }
-      Logger.debug("selected model", { modelId: model.id, family: model.family, requestedModel: request.model, requestId })
-
-      // convert openai messages to vscode format
-      const vsCodeMessages = this.convertOpenAIMessagesToVSCode(request.messages)
-      Logger.debug("converted OpenAI messages", { messageCount: vsCodeMessages.length, requestId })
-
-      // convert tools to vscode format
-      const vsCodeTools = this.convertOpenAIToolsToVSCode(request.tools)
-      Logger.debug("converted OpenAI tools", { toolCount: vsCodeTools.length, requestId })
-
-      // make request to vscode language model api
-      const options = { tools: vsCodeTools }
-      const token = new vscode.CancellationTokenSource().token
-
-      try {
-        const response = await model.sendRequest(vsCodeMessages, options, token)
-
-        if (request.stream) {
-          await this.handleOpenAIStreamingResponse(response, res, request, model, requestId)
-        } else {
-          await this.handleOpenAINonStreamingResponse(response, res, request, model, requestId)
-        }
-
-      } catch (lmError) {
-        Logger.error("VS Code LM API error", lmError as Error, { requestId })
-
-        if (lmError instanceof vscode.LanguageModelError) {
-          this.handleLanguageModelError(lmError, res, requestId)
-        } else {
-          this.sendError(res, HTTP_STATUS.BAD_GATEWAY, `language model request failed: ${lmError}`, ERROR_CODES.API_ERROR, requestId)
-        }
-      }
-
-    } catch (error) {
-      Logger.error("error handling OpenAI chat completions", error as Error, { requestId })
-
-      if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
-      }
-    }
-  }
 
   public async handleAnthropicMessages(
     req: http.IncomingMessage,
@@ -239,7 +158,6 @@ export class RequestHandler {
           accessible: models.length > 0,
         },
         endpoints: {
-          openai: "/v1/chat/completions",
           anthropic: "/v1/messages",
         },
         timestamp: new Date().toISOString(),
@@ -265,32 +183,6 @@ export class RequestHandler {
 
     // no match found
     return null
-  }
-
-  private convertOpenAIMessagesToVSCode(messages: any[]): vscode.LanguageModelChatMessage[] {
-    return messages.map(msg => {
-      const role = msg.role === "system" ? vscode.LanguageModelChatMessageRole.User :
-        msg.role === "user" ? vscode.LanguageModelChatMessageRole.User :
-          vscode.LanguageModelChatMessageRole.Assistant
-
-      let content = ""
-      if (typeof msg.content === "string") {
-        content = msg.content
-      } else if (Array.isArray(msg.content)) {
-        // handle multimodal content - extract text for now
-        content = msg.content
-          .filter((part: any) => part.type === "text")
-          .map((part: any) => part.text)
-          .join("\n")
-      }
-
-      // for system messages, prepend a system indicator
-      if (msg.role === "system") {
-        content = `[SYSTEM] ${content}`
-      }
-
-      return vscode.LanguageModelChatMessage.User(content)
-    })
   }
 
   private convertAnthropicMessagesToVSCode(messages: any[], system?: string): vscode.LanguageModelChatMessage[] {
@@ -319,12 +211,12 @@ export class RequestHandler {
         part.tool_use_id,
         convertToolResultContent(part.content)
       ),
-      tool_use: (part: any) => new vscode.LanguageModelToolCallPart(part.id, part.name, part.input)
+      tool_use: (part: any) => new vscode.LanguageModelToolCallPart(part.id, part.name, part.input),
     }
 
     const messageConstructors = {
       user: vscode.LanguageModelChatMessage.User,
-      assistant: vscode.LanguageModelChatMessage.Assistant
+      assistant: vscode.LanguageModelChatMessage.Assistant,
     }
 
     for (const msg of messages) {
@@ -350,17 +242,6 @@ export class RequestHandler {
     return vsCodeMessages
   }
 
-  private convertOpenAIToolsToVSCode(tools?: OpenAITool[]): vscode.LanguageModelChatTool[] {
-    if (!tools || !Array.isArray(tools)) {
-      return []
-    }
-
-    return tools.map(tool => ({
-      name: tool.function.name,
-      description: tool.function.description,
-      inputSchema: tool.function.parameters,
-    }))
-  }
 
   private convertAnthropicToolsToVSCode(tools?: AnthropicTool[]): vscode.LanguageModelChatTool[] {
     if (!tools || !Array.isArray(tools)) {
@@ -371,21 +252,6 @@ export class RequestHandler {
       name: tool.name,
       description: tool.description,
       inputSchema: tool.input_schema,
-    }))
-  }
-
-  private convertVSCodeToolCallsToOpenAI(toolCalls?: vscode.LanguageModelToolCallPart[]): OpenAIToolCall[] {
-    if (!toolCalls || !Array.isArray(toolCalls)) {
-      return []
-    }
-
-    return toolCalls.map(call => ({
-      id: call.callId,
-      type: "function" as const,
-      function: {
-        name: call.name,
-        arguments: JSON.stringify(call.input),
-      },
     }))
   }
 
@@ -400,187 +266,6 @@ export class RequestHandler {
       name: call.name,
       input: call.input,
     }))
-  }
-
-  private async handleOpenAIStreamingResponse(
-    response: vscode.LanguageModelChatResponse,
-    res: http.ServerResponse,
-    request: OpenAIChatCompletionRequest,
-    model: vscode.LanguageModelChat,
-    requestId: string
-  ): Promise<void> {
-    res.writeHead(HTTP_STATUS.OK, SSE_HEADERS)
-
-    try {
-      Logger.debug("starting OpenAI streaming response", { requestId })
-
-      let content = ""
-      let chunkIndex = 0
-      const toolCalls: vscode.LanguageModelToolCallPart[] = []
-
-      // process the response stream to get both text and tool calls
-      for await (const part of response.stream) {
-        // check if this is a text part
-        if (part instanceof vscode.LanguageModelTextPart) {
-          const textChunk = part.value
-          content += textChunk
-
-          const streamChunk = {
-            id: `chatcmpl-${requestId}`,
-            object: "chat.completion.chunk",
-            created: Math.floor(Date.now() / 1000),
-            model: request.model,
-            choices: [{
-              index: 0,
-              delta: {
-                role: chunkIndex === 0 ? "assistant" : undefined,
-                content: textChunk,
-              },
-              finish_reason: null,
-            }],
-          }
-
-          res.write(`data: ${JSON.stringify(streamChunk)}\n\n`)
-          chunkIndex++
-        }
-        // check if this is a tool call part
-        else if (part instanceof vscode.LanguageModelToolCallPart) {
-          toolCalls.push(part)
-        }
-      }
-
-      // convert and send tool calls if any were found
-      const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
-
-      if (openAIToolCalls.length > 0) {
-        // send tool calls in the final content chunk
-        const toolCallChunk = {
-          id: `chatcmpl-${requestId}`,
-          object: "chat.completion.chunk",
-          created: Math.floor(Date.now() / 1000),
-          model: request.model,
-          choices: [{
-            index: 0,
-            delta: {
-              tool_calls: openAIToolCalls,
-            },
-            finish_reason: null,
-          }],
-        }
-        res.write(`data: ${JSON.stringify(toolCallChunk)}\n\n`)
-      }
-
-      // send final chunk
-      const finalChunk = {
-        id: `chatcmpl-${requestId}`,
-        object: "chat.completion.chunk",
-        created: Math.floor(Date.now() / 1000),
-        model: request.model,
-        choices: [{
-          index: 0,
-          delta: {},
-          finish_reason: openAIToolCalls.length > 0 ? "tool_calls" : "stop",
-        }],
-      }
-
-      res.write(`data: ${JSON.stringify(finalChunk)}\n\n`)
-      res.write("data: [DONE]\n\n")
-
-      Logger.debug("OpenAI streaming response completed", {
-        requestId,
-        contentLength: content.length,
-        toolCallsCount: toolCalls.length,
-      })
-
-    } catch (error) {
-      Logger.error("OpenAI streaming error", error as Error, { requestId })
-      const errorEvent = {
-        type: "error",
-        error: {
-          message: "stream processing error",
-          type: ERROR_CODES.API_ERROR,
-        },
-      }
-      res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
-    } finally {
-      res.end()
-    }
-  }
-
-  private async handleOpenAINonStreamingResponse(
-    response: vscode.LanguageModelChatResponse,
-    res: http.ServerResponse,
-    request: OpenAIChatCompletionRequest,
-    model: vscode.LanguageModelChat,
-    requestId: string
-  ): Promise<void> {
-    try {
-      Logger.debug("collecting OpenAI full response", { requestId })
-
-      let content = ""
-      const toolCalls: vscode.LanguageModelToolCallPart[] = []
-
-      // process the response stream to get both text and tool calls
-      for await (const part of response.stream) {
-        // check if this is a text part
-        if (part instanceof vscode.LanguageModelTextPart) {
-          content += part.value
-        }
-        // check if this is a tool call part
-        else if (part instanceof vscode.LanguageModelToolCallPart) {
-          toolCalls.push(part)
-        }
-      }
-
-      // convert tool calls to OpenAI format
-      const openAIToolCalls = this.convertVSCodeToolCallsToOpenAI(toolCalls)
-
-      const message: any = {
-        role: "assistant",
-        content: content || null,
-      }
-
-      let finishReason: string = "stop"
-
-      if (openAIToolCalls.length > 0) {
-        message.tool_calls = openAIToolCalls
-        finishReason = "tool_calls"
-      }
-
-      const completionResponse: OpenAIChatCompletionResponse = {
-        id: `chatcmpl-${requestId}`,
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: request.model,
-        choices: [{
-          index: 0,
-          message: message,
-          finish_reason: finishReason as any,
-        }],
-        usage: {
-          prompt_tokens: this.estimateTokens(request.messages),
-          completion_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
-          total_tokens: 0,
-        },
-      }
-
-      completionResponse.usage.total_tokens =
-                completionResponse.usage.prompt_tokens + completionResponse.usage.completion_tokens
-
-      res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
-      res.end(JSON.stringify(completionResponse, null, 2))
-
-      Logger.debug("OpenAI response sent", {
-        requestId,
-        contentLength: content.length,
-        totalTokens: completionResponse.usage.total_tokens,
-        toolCallsCount: toolCalls.length,
-      })
-
-    } catch (error) {
-      Logger.error("error collecting OpenAI response", error as Error, { requestId })
-      throw error
-    }
   }
 
   private async handleAnthropicStreamingResponse(
@@ -613,7 +298,7 @@ export class RequestHandler {
           usage: { input_tokens: 0, output_tokens: 0 },
         },
       }
-      res.write(`event: message_start\n`)
+      res.write("event: message_start\n")
       res.write(`data: ${JSON.stringify(messageStartEvent)}\n\n`)
 
       // send content_block_start event for text
@@ -625,7 +310,7 @@ export class RequestHandler {
           text: "",
         },
       }
-      res.write(`event: content_block_start\n`)
+      res.write("event: content_block_start\n")
       res.write(`data: ${JSON.stringify(contentBlockStartEvent)}\n\n`)
 
       // process the response stream to get both text and tool calls
@@ -644,7 +329,7 @@ export class RequestHandler {
             },
           }
 
-          res.write(`event: content_block_delta\n`)
+          res.write("event: content_block_delta\n")
           res.write(`data: ${JSON.stringify(contentBlockDeltaEvent)}\n\n`)
         }
         // check if this is a tool call part
@@ -658,7 +343,7 @@ export class RequestHandler {
         type: "content_block_stop",
         index: blockIndex,
       }
-      res.write(`event: content_block_stop\n`)
+      res.write("event: content_block_stop\n")
       res.write(`data: ${JSON.stringify(contentBlockStopEvent)}\n\n`)
       blockIndex++
 
@@ -679,7 +364,7 @@ export class RequestHandler {
             input: {},
           },
         }
-        res.write(`event: content_block_start\n`)
+        res.write("event: content_block_start\n")
         res.write(`data: ${JSON.stringify(toolBlockStartEvent)}\n\n`)
 
         // send tool use content delta event
@@ -691,7 +376,7 @@ export class RequestHandler {
             partial_json: JSON.stringify(toolCall.input),
           },
         }
-        res.write(`event: content_block_delta\n`)
+        res.write("event: content_block_delta\n")
         res.write(`data: ${JSON.stringify(toolBlockDeltaEvent)}\n\n`)
 
         // send tool use content block stop event
@@ -699,7 +384,7 @@ export class RequestHandler {
           type: "content_block_stop",
           index: blockIndex,
         }
-        res.write(`event: content_block_stop\n`)
+        res.write("event: content_block_stop\n")
         res.write(`data: ${JSON.stringify(toolBlockStopEvent)}\n\n`)
         blockIndex++
       }
@@ -715,14 +400,14 @@ export class RequestHandler {
           output_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
         },
       }
-      res.write(`event: message_delta\n`)
+      res.write("event: message_delta\n")
       res.write(`data: ${JSON.stringify(messageDeltaEvent)}\n\n`)
 
       // send final message_stop event
       const messageStopEvent = {
         type: "message_stop",
       }
-      res.write(`event: message_stop\n`)
+      res.write("event: message_stop\n")
       res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
       Logger.debug("Anthropic streaming response completed", {
@@ -740,7 +425,7 @@ export class RequestHandler {
           type: ERROR_CODES.API_ERROR,
         },
       }
-      res.write(`event: error\n`)
+      res.write("event: error\n")
       res.write(`data: ${JSON.stringify(errorEvent)}\n\n`)
     } finally {
       res.end()

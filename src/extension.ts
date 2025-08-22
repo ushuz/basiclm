@@ -149,11 +149,6 @@ async function showServerStatus() {
         action: "restart",
       },
       {
-        label: "Copy OpenAI URL",
-        description: `http://${state.host}:${state.port}/v1/chat/completions`,
-        action: "copy-openai-url",
-      },
-      {
         label: "Copy Anthropic URL",
         description: `http://${state.host}:${state.port}/v1/messages`,
         action: "copy-anthropic-url",
@@ -207,12 +202,6 @@ async function handleStatusAction(action: string) {
       break
     case "configure":
       await vscode.commands.executeCommand("workbench.action.openSettings", "basiclm")
-      break
-    case "copy-openai-url":
-      const state = server.getState()
-      const openaiUrl = `http://${state.host}:${state.port}/v1/chat/completions`
-      await vscode.env.clipboard.writeText(openaiUrl)
-      vscode.window.showInformationMessage("Copied OpenAI URL to clipboard")
       break
     case "copy-anthropic-url":
       const stateAnthropic = server.getState()

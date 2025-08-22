@@ -52,7 +52,6 @@ export class LMAPIServer {
             host: serverHost,
             port: serverPort,
             endpoints: {
-              openai: `http://${serverHost}:${serverPort}${API_ENDPOINTS.OPENAI_CHAT_COMPLETIONS}`,
               anthropic: `http://${serverHost}:${serverPort}${API_ENDPOINTS.ANTHROPIC_MESSAGES}`,
             },
           })
@@ -168,10 +167,6 @@ export class LMAPIServer {
     requestId: string
   ): Promise<void> {
     switch (pathname) {
-      case API_ENDPOINTS.OPENAI_CHAT_COMPLETIONS:
-        await this.requestHandler.handleOpenAIChatCompletions(req, res, requestId)
-        break
-
       case API_ENDPOINTS.ANTHROPIC_MESSAGES:
         await this.requestHandler.handleAnthropicMessages(req, res, requestId)
         break

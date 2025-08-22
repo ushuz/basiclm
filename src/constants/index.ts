@@ -6,7 +6,6 @@ export const DEFAULT_CONFIG = {
 }
 
 export const API_ENDPOINTS = {
-  OPENAI_CHAT_COMPLETIONS: "/v1/chat/completions",
   ANTHROPIC_MESSAGES: "/v1/messages",
   MODELS: "/v1/models",
   HEALTH: "/health",

@@ -14,70 +14,6 @@ export interface ServerState {
   errorCount: number
 }
 
-export interface OpenAIChatCompletionRequest {
-  model: string
-  messages: OpenAIMessage[]
-  max_tokens?: number
-  temperature?: number
-  top_p?: number
-  n?: number
-  stream?: boolean
-  stop?: string | string[]
-  presence_penalty?: number
-  frequency_penalty?: number
-  logit_bias?: Record<string, number>
-  user?: string
-  tools?: OpenAITool[]
-}
-
-export interface OpenAIMessage {
-  role: "system" | "user" | "assistant" | "function" | "tool"
-  content: string | OpenAIMessageContent[] | null
-  name?: string
-  function_call?: {
-    name: string
-    arguments: string
-  }
-  tool_calls?: OpenAIToolCall[]
-  tool_call_id?: string
-}
-
-export interface OpenAIToolCall {
-  id: string
-  type: "function"
-  function: {
-    name: string
-    arguments: string
-  }
-}
-
-export interface OpenAIMessageContent {
-  type: "text" | "image_url"
-  text?: string
-  image_url?: {
-    url: string
-    detail?: "low" | "high" | "auto"
-  }
-}
-
-export interface OpenAIChatCompletionResponse {
-  id: string
-  object: "chat.completion"
-  created: number
-  model: string
-  choices: OpenAIChoice[]
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-  }
-}
-
-export interface OpenAIChoice {
-  index: number
-  message: OpenAIMessage
-  finish_reason: "stop" | "length" | "function_call" | "tool_calls" | "content_filter" | null
-}
 
 export interface AnthropicMessageRequest {
   model: string
@@ -138,14 +74,6 @@ export interface ErrorResponse {
   request_id?: string
 }
 
-export interface OpenAITool {
-  type: "function"
-  function: {
-    name: string
-    description: string
-    parameters?: object
-  }
-}
 
 export interface AnthropicTool {
   name: string
