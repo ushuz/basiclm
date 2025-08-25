@@ -108,7 +108,7 @@ export class RequestHandler {
       const models = await vscode.lm.selectChatModels()
 
       const modelsData = models.map(model => ({
-        created_at: new Date().toISOString(), // Mocking the creation date
+        created_at: new Date().toISOString(), // mocking the creation date
         display_name: model.id,
         id: model.id,
         type: "model"
@@ -117,7 +117,7 @@ export class RequestHandler {
       const modelsResponse = {
         data: modelsData,
         first_id: modelsData.length > 0 ? modelsData[0].id : null,
-        has_more: false, // Assuming a single page for now
+        has_more: false, // assuming a single page for now
         last_id: modelsData.length > 0 ? modelsData[modelsData.length - 1].id : null,
       }
 
