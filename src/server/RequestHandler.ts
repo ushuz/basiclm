@@ -108,15 +108,14 @@ export class RequestHandler {
       const models = await vscode.lm.selectChatModels()
 
       const modelsResponse = {
-        object: "list",
-        data: models.map(model => ({
+        type: "model_list",
+        models: models.map(model => ({
           id: model.id,
-          object: "model",
-          created: Math.floor(Date.now() / 1000),
-          owned_by: model.vendor || "unknown",
-          permission: [],
-          root: model.id,
-          parent: null,
+          name: model.id,
+          description: `A model from ${model.vendor} of the family ${model.family}`,
+          family: model.family,
+          vendor: model.vendor,
+          version: model.version,
         })),
       }
 
