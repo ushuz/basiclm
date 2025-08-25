@@ -109,7 +109,7 @@ export class RequestHandler {
 
       const modelsData = models.map(model => ({
         created_at: new Date().toISOString(), // Mocking the creation date
-        display_name: `${model.vendor} ${model.family}`,
+        display_name: model.id,
         id: model.id,
         type: "model"
       }));
