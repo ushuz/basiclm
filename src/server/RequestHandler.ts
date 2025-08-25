@@ -107,16 +107,18 @@ export class RequestHandler {
 
       const models = await vscode.lm.selectChatModels()
 
+      const modelsData = models.map(model => ({
+        created_at: new Date().toISOString(), // Mocking the creation date
+        display_name: `${model.vendor} ${model.family}`,
+        id: model.id,
+        type: "model"
+      }));
+
       const modelsResponse = {
-        type: "model_list",
-        models: models.map(model => ({
-          id: model.id,
-          name: model.id,
-          description: `A model from ${model.vendor} of the family ${model.family}`,
-          family: model.family,
-          vendor: model.vendor,
-          version: model.version,
-        })),
+        data: modelsData,
+        first_id: modelsData.length > 0 ? modelsData[0].id : null,
+        has_more: false, // Assuming a single page for now
+        last_id: modelsData.length > 0 ? modelsData[modelsData.length - 1].id : null,
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
