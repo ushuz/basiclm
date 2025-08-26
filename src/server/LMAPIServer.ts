@@ -4,7 +4,7 @@ import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
 import { ServerConfig, ServerState } from "../types"
-import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, SERVER_TIMEOUTS } from "../constants"
+import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, SERVER_TIMEOUTS, ERROR_CODES } from "../constants"
 
 export class LMAPIServer {
   private server?: http.Server
@@ -176,7 +176,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.requestHandler.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", undefined, requestId)
+        this.requestHandler.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", ERROR_CODES.NOT_FOUND_ERROR, requestId)
     }
   }
 
