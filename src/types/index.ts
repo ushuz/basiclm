@@ -14,6 +14,7 @@ export interface ServerState {
   errorCount: number
 }
 
+// anthropic/openai combined error response
 export interface ErrorResponse {
   type?: "error"
   error: {
