@@ -83,13 +83,14 @@
     "test-api": "node test/api-test.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.92.0",
+    "@anthropic-ai/sdk": "^0.60.0",
     "@types/node": "18.x",
+    "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
     "@typescript-eslint/parser": "^6.4.1",
+    "@vscode/vsce": "^2.15.0",
     "eslint": "^8.47.0",
-    "typescript": "~5.3.3",
-    "@vscode/vsce": "^2.15.0"
+    "typescript": "~5.3.3"
   },
   "repository": {
     "type": "git",
