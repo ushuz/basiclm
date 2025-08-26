@@ -1,14 +1,12 @@
 # BasicLM
 
-A VS Code extension that bridges the VS Code Language Model API to OpenAI and Anthropic compatible HTTP endpoints.
+A VS Code extension that bridges the VS Code Language Model API to Anthropic compatible HTTP endpoints.
 
 ## Features
 
-- **OpenAI Compatibility**: Provides `/v1/chat/completions` endpoint compatible with OpenAI's API
-- **Anthropic Compatibility**: Provides `/v1/messages` endpoint compatible with Anthropic's API  
+- **Anthropic Compatibility**: Provides `/v1/messages` `/v1/models` endpoints compatible with Anthropic API
 - **VS Code Integration**: Uses VS Code's built-in Language Model API (requires active GitHub Copilot subscription)
-- **Streaming Support**: Both streaming and non-streaming responses for both endpoints
-- **Multi-modal Support**: Basic support for text and image content (text extraction)
+- **Streaming Support**: Both streaming and non-streaming responses
 - **Local Server**: Runs locally for privacy and security
 
 ## Installation
@@ -54,33 +52,14 @@ A VS Code extension that bridges the VS Code Language Model API to OpenAI and An
 ## API Endpoints
 
 ```
-POST /v1/chat/completions
-```
-```
 POST /v1/messages
 ```
 ```
 GET /v1/models
 ```
-```
-GET /health
-```
 
 ## Example Usage
 
-### OpenAI Format
-```bash
-curl -X POST http://127.0.0.1:8099/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-5",
-    "messages": [
-      {"role": "user", "content": "Hello!"}
-    ]
-  }'
-```
-
-### Anthropic Format
 ```bash
 curl -X POST http://127.0.0.1:8099/v1/messages \
   -H "Content-Type: application/json" \
