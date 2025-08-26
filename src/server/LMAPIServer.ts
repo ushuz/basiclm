@@ -200,7 +200,7 @@ export class LMAPIServer {
         code: statusCode.toString(),
       },
       request_id: requestId,
-    }, null, 2))
+    }))
   }
 
   private generateRequestId(): string {

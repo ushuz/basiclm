@@ -122,7 +122,7 @@ export class RequestHandler {
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
-      res.end(JSON.stringify(modelsResponse, null, 2))
+      res.end(JSON.stringify(modelsResponse))
 
       Logger.debug("models response sent", { modelCount: models.length, requestId })
 
@@ -457,7 +457,7 @@ export class RequestHandler {
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
-      res.end(JSON.stringify(messageResponse, null, 2))
+      res.end(JSON.stringify(messageResponse))
 
       Logger.debug("anthropic response sent", {
         requestId,
@@ -534,7 +534,7 @@ export class RequestHandler {
     }
 
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
-    res.end(JSON.stringify(errorResponse, null, 2))
+    res.end(JSON.stringify(errorResponse))
 
     const log = statusCode >= HTTP_STATUS.INTERNAL_SERVER_ERROR ? Logger.error : Logger.warn
     log.apply(Logger, [`error response: ${statusCode}`, new Error(message), { type, requestId }])
