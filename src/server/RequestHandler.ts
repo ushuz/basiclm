@@ -74,7 +74,7 @@ export class RequestHandler {
           : this.handleAnthropicResponse
         await handleAnthropicResponse.apply(this, [response, res, request, model, requestId])
       } catch (lmError) {
-        Logger.error("VS Code LM API error", lmError as Error, { requestId })
+        Logger.error("VS Code LM API error", { requestId, error: lmError as Error })
 
         if (lmError instanceof vscode.LanguageModelError) {
           this.handleLanguageModelError(lmError, res, requestId)
@@ -84,7 +84,7 @@ export class RequestHandler {
       }
 
     } catch (error) {
-      Logger.error("error handling anthropic messages", error as Error, { requestId })
+      Logger.error("error handling anthropic messages", { requestId, error: error as Error })
 
       if (!res.headersSent) {
         this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
@@ -127,7 +127,7 @@ export class RequestHandler {
       Logger.debug("models response sent", { modelCount: models.length, requestId })
 
     } catch (error) {
-      Logger.error("error handling models request", error as Error, { requestId })
+      Logger.error("error handling models request", { requestId, error: error as Error })
       this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "failed to retrieve models", ERROR_CODES.API_ERROR, requestId)
     }
   }
@@ -375,7 +375,7 @@ export class RequestHandler {
       })
 
     } catch (error) {
-      Logger.error("anthropic streaming error", error as Error, { requestId })
+      Logger.error("anthropic streaming error", { requestId, error: error as Error })
       const errorEvent = {
         type: "error",
         error: {
@@ -468,7 +468,7 @@ export class RequestHandler {
       })
 
     } catch (error) {
-      Logger.error("error collecting anthropic response", error as Error, { requestId })
+      Logger.error("error collecting anthropic response", { requestId, error: error as Error })
       throw error
     }
   }
@@ -537,7 +537,7 @@ export class RequestHandler {
     res.end(JSON.stringify(errorResponse))
 
     const log = statusCode >= HTTP_STATUS.INTERNAL_SERVER_ERROR ? Logger.error : Logger.warn
-    log.apply(Logger, [`error response: ${statusCode}`, new Error(message), { type, requestId }])
+    log.apply(Logger, [`error response: ${statusCode}`, { type, requestId, error: new Error(message) }])
   }
 
   private async readRequestBody(req: http.IncomingMessage): Promise<string> {

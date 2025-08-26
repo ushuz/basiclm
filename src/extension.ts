@@ -64,7 +64,7 @@ function registerCommands(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("BasicLM started successfully")
     } catch (error) {
       const errorMessage = `BasicLM failed to start: ${(error as Error).message}`
-      Logger.error(errorMessage, error as Error)
+      Logger.error(errorMessage, { error: error as Error })
       vscode.window.showErrorMessage(errorMessage)
     }
   })
@@ -82,7 +82,7 @@ function registerCommands(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("BasicLM stopped")
     } catch (error) {
       const errorMessage = `BasicLM failed to stop: ${(error as Error).message}`
-      Logger.error(errorMessage, error as Error)
+      Logger.error(errorMessage, { error: error as Error })
       vscode.window.showErrorMessage(errorMessage)
     }
   })
@@ -95,7 +95,7 @@ function registerCommands(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("BasicLM restarted")
     } catch (error) {
       const errorMessage = `BasicLM failed to restart: ${(error as Error).message}`
-      Logger.error(errorMessage, error as Error)
+      Logger.error(errorMessage, { error: error as Error })
       vscode.window.showErrorMessage(errorMessage)
     }
   })

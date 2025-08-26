@@ -26,7 +26,8 @@ class LoggerService {
     console.warn(formatted)
   }
 
-  error(message: string, error?: Error, context?: any): void {
+  error(message: string, context?: any): void {
+    const error = context?.error
     const errorInfo = error ? ` | Error: ${error.message} | Stack: ${error.stack}` : ""
     const formatted = this.formatMessage("ERROR", message, context) + errorInfo
     this.outputChannel.appendLine(formatted)
