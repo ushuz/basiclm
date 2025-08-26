@@ -151,7 +151,7 @@ export class LMAPIServer {
       Logger.error("request handling error", error as Error, { requestId })
 
       if (!res.headersSent) {
-        this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", requestId)
+        this.requestHandler.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "internal server error", undefined, requestId)
       }
     } finally {
       const duration = Date.now() - startTime
@@ -176,7 +176,7 @@ export class LMAPIServer {
         break
 
       default:
-        this.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", requestId)
+        this.requestHandler.sendError(res, HTTP_STATUS.NOT_FOUND, "endpoint not found", undefined, requestId)
     }
   }
 
@@ -184,23 +184,6 @@ export class LMAPIServer {
     Object.entries(CORS_HEADERS).forEach(([key, value]) => {
       res.setHeader(key, value)
     })
-  }
-
-  private sendError(res: http.ServerResponse, statusCode: number, message: string, requestId?: string): void {
-    if (res.headersSent) {
-      return
-    }
-
-    res.writeHead(statusCode, { "Content-Type": "application/json" })
-    res.end(JSON.stringify({
-      type: "error",
-      error: {
-        message,
-        type: "api_error",
-        code: statusCode.toString(),
-      },
-      request_id: requestId,
-    }))
   }
 
   private generateRequestId(): string {

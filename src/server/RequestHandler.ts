@@ -512,11 +512,11 @@ export class RequestHandler {
     this.sendError(res, statusCode, message, errorCode, requestId)
   }
 
-  private sendError(
+  public sendError(
     res: http.ServerResponse,
     statusCode: number,
     message: string,
-    type: string,
+    type: string = ERROR_CODES.API_ERROR,
     requestId: string
   ): void {
     if (res.headersSent) {
