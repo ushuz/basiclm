@@ -9,45 +9,46 @@ A VS Code extension that bridges the VS Code Language Model API to Anthropic com
 - **Streaming Support**: Both streaming and non-streaming responses
 - **Local Server**: Runs locally for privacy and security
 
+## Requirements
+
+- VS Code 1.101.0 or higher
+- GitHub Copilot subscription
+- GitHub Copilot extension installed and activated
+
 ## Installation
 
 ### Install as VS Code Extension
 
-1. **Package the extension:**
+1. **Package the extension**
    ```bash
    npm run package
    ```
    This creates a `.vsix` file.
 
-2. **Install in VS Code:**
+2. **Install in VS Code**
    - Open VS Code
    - Go to Extensions (Ctrl+Shift+X)
    - Click the "..." menu → "Install from VSIX..."
    - Select the generated `.vsix` file
 
-3. **Prerequisites:**
-   - Ensure GitHub Copilot extension is installed and active
-   - Have a valid GitHub Copilot subscription
-   - VS Code 1.92.0 or higher
-
 ### Using the Extension
 
-1. **Start the server:**
+**From Command Palette**
    - Open Command Palette (Ctrl+Shift+P)
-   - Run "BasicLM: Start BasicLM Server"
+   - Run "BasicLM: Start Server"
    - Check status bar for server status
 
-2. **Test the endpoints:**
-   ```bash
-   npm run test-api
-   ```
+**From Status Bar**
+   - Click on the "BasicLM" status bar item
+   - Select "Start Server" from the dropdown menu
+   - Check status bar for server status
 
 ## Configuration
 
 - `basiclm.port`: Server port (default: 8099)
 - `basiclm.host`: Server host (default: 127.0.0.1)
-- `basiclm.autoStart`: Auto-start server when VS Code starts
-- `basiclm.enableLogging`: Enable detailed logging
+- `basiclm.autoStart`: Auto-start server when VS Code starts (default: true)
+- `basiclm.enableLogging`: Enable detailed logging (default: false)
 
 ## API Endpoints
 
@@ -72,33 +73,36 @@ curl -X POST http://127.0.0.1:8099/v1/messages \
   }'
 ```
 
-## Requirements
-
-- VS Code 1.92.0 or higher
-- Active GitHub Copilot subscription
-- Access to VS Code Language Model API
-
 ## Development
 
 ```bash
-npm install
+# Build/compile TypeScript
 npm run compile
+
+# Lint the code
 npm run lint
+
+# Package the extension
+npm run package
+
+# Test the API endpoints
+npm run test-api
+npm run test-handler
 ```
 
 ## Troubleshooting
 
-1. **Server won't start:**
+1. **Server won't start**
    - Check if GitHub Copilot is working in VS Code
-   - Verify port 8099 is not in use
+   - Verify port `8099` is not in use
    - Check Output panel "BasicLM" for logs
 
-2. **No models available:**
+2. **No models available**
    - Ensure GitHub Copilot subscription is active
    - Try restarting VS Code
    - Check Copilot status in VS Code
 
-3. **API calls fail:**
+3. **API calls fail**
    - Verify server is running (check status bar)
    - Check endpoint URLs are correct
    - Review logs in Output panel

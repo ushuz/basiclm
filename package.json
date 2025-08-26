@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "publisher": "ushuz",
   "engines": {
-    "vscode": "^1.92.0"
+    "vscode": "^1.101.0"
   },
   "categories": [
     "Other"
@@ -83,7 +83,7 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.60.0",
     "@types/node": "18.x",
-    "@types/vscode": "^1.92.0",
+    "@types/vscode": "^1.101.0",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
     "@typescript-eslint/parser": "^6.4.1",
     "@vscode/vsce": "^2.15.0",
