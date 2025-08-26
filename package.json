@@ -73,14 +73,12 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
+    "pretest": "npm run compile && npm run lint",
     "package": "vsce package",
-    "test-api": "node test/api-test.js"
+    "test-api": "node test/test-api.js",
+    "test-handler": "node test/test-handler.js"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.60.0",
