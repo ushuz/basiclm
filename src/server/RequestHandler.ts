@@ -1,15 +1,18 @@
 import * as http from "http"
 import * as vscode from "vscode"
-import { Logger } from "../utils/Logger"
+import { CONTENT_TYPES, ERROR_CODES, HTTP_STATUS, SSE_HEADERS } from "../constants"
 import {
+  AnthropicContentBlock,
   AnthropicMessageRequest,
   AnthropicMessageResponse,
-  ServerState,
+  AnthropicTextBlockParam,
+  AnthropicToolResultBlockParam,
+  AnthropicToolUnion,
+  AnthropicToolUseBlock,
+  AnthropicToolUseBlockParam,
   ErrorResponse,
-  AnthropicTool,
-  AnthropicContent,
 } from "../types"
-import { HTTP_STATUS, CONTENT_TYPES, SSE_HEADERS, ERROR_CODES } from "../constants"
+import { Logger } from "../utils/Logger"
 
 export class RequestHandler {
 
@@ -54,11 +57,11 @@ export class RequestHandler {
 
       // convert anthropic messages to vscode format
       const vsCodeMessages = this.convertAnthropicMessagesToVSCode(request.messages, request.system)
-      Logger.debug("converted Anthropic messages", { messageCount: vsCodeMessages.length, requestId })
+      Logger.debug("converted anthropic messages", { messageCount: vsCodeMessages.length, requestId })
 
       // convert tools to vscode format
       const vsCodeTools = this.convertAnthropicToolsToVSCode(request.tools)
-      Logger.debug("converted Anthropic tools", { toolCount: vsCodeTools.length, requestId })
+      Logger.debug("converted anthropic tools", { toolCount: vsCodeTools.length, requestId })
 
       // make request to vscode language model api
       const options = { tools: vsCodeTools }
@@ -69,7 +72,7 @@ export class RequestHandler {
         const handleAnthropicResponse = request.stream
           ? this.handleAnthropicStreamingResponse
           : this.handleAnthropicResponse
-        await handleAnthropicResponse(response, res, request, model, requestId)
+        await handleAnthropicResponse.apply(this, [response, res, request, model, requestId])
       } catch (lmError) {
         Logger.error("VS Code LM API error", lmError as Error, { requestId })
 
@@ -81,7 +84,7 @@ export class RequestHandler {
       }
 
     } catch (error) {
-      Logger.error("error handling Anthropic messages", error as Error, { requestId })
+      Logger.error("error handling anthropic messages", error as Error, { requestId })
 
       if (!res.headersSent) {
         this.sendError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "request processing failed", ERROR_CODES.API_ERROR, requestId)
@@ -108,8 +111,8 @@ export class RequestHandler {
         created_at: new Date().toISOString(), // mocking the creation date
         display_name: model.name,
         id: model.id,
-        type: "model"
-      }));
+        type: "model",
+      }))
 
       const modelsResponse = {
         data: modelsData,
@@ -142,10 +145,10 @@ export class RequestHandler {
     return null
   }
 
-  private convertAnthropicMessagesToVSCode(messages: any[], system?: string): vscode.LanguageModelChatMessage[] {
+  private convertAnthropicMessagesToVSCode(messages: AnthropicMessageRequest["messages"], system?: AnthropicMessageRequest["system"]): vscode.LanguageModelChatMessage[] {
     const vsCodeMessages: vscode.LanguageModelChatMessage[] = []
 
-    // add system message
+    // FIXME: hack for system messages, since LM API does not yet support native system messages
     if (system) vsCodeMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${system}`))
 
     const convertToolResultContent = (content: any) => {
@@ -163,12 +166,12 @@ export class RequestHandler {
     }
 
     const partHandlers = {
-      text: (part: any) => new vscode.LanguageModelTextPart(part.text),
-      tool_result: (part: any) => new vscode.LanguageModelToolResultPart(
+      text: (part: AnthropicTextBlockParam) => new vscode.LanguageModelTextPart(part.text),
+      tool_result: (part: AnthropicToolResultBlockParam) => new vscode.LanguageModelToolResultPart(
         part.tool_use_id,
         convertToolResultContent(part.content)
       ),
-      tool_use: (part: any) => new vscode.LanguageModelToolCallPart(part.id, part.name, part.input),
+      tool_use: (part: AnthropicToolUseBlockParam) => new vscode.LanguageModelToolCallPart(part.id, part.name, part.input as object),
     }
 
     const messageConstructors = {
@@ -182,36 +185,35 @@ export class RequestHandler {
       let content
       if (typeof msg.content === "string") {
         content = msg.content
-      }
-      if (Array.isArray(msg.content)) {
+      } else if (Array.isArray(msg.content)) {
         content = []
         for (const part of msg.content) {
           const handler = partHandlers[part.type as keyof typeof partHandlers]
           if (handler) {
-            content.push(handler(part))
+            content.push(handler(part as any))
           }
         }
       }
 
-      vsCodeMessages.push(constructor(content))
+      vsCodeMessages.push(constructor(content as any))
     }
 
     return vsCodeMessages
   }
 
-  private convertAnthropicToolsToVSCode(tools?: AnthropicTool[]): vscode.LanguageModelChatTool[] {
+  private convertAnthropicToolsToVSCode(tools?: AnthropicToolUnion[]): vscode.LanguageModelChatTool[] {
     if (!tools || !Array.isArray(tools)) {
       return []
     }
 
     return tools.map(tool => ({
       name: tool.name,
-      description: tool.description,
-      inputSchema: tool.input_schema,
+      description: (tool as any).description || tool.name || "no description available",
+      inputSchema: (tool as any).input_schema,
     }))
   }
 
-  private convertVSCodeToolCallsToAnthropic(toolCalls?: vscode.LanguageModelToolCallPart[]): AnthropicContent[] {
+  private convertVSCodeToolCallsToAnthropic(toolCalls?: vscode.LanguageModelToolCallPart[]): AnthropicToolUseBlock[] {
     if (!toolCalls || !Array.isArray(toolCalls)) {
       return []
     }
@@ -234,7 +236,7 @@ export class RequestHandler {
     res.writeHead(HTTP_STATUS.OK, SSE_HEADERS)
 
     try {
-      Logger.debug("starting Anthropic streaming response", { requestId })
+      Logger.debug("starting anthropic streaming response", { requestId })
 
       let content = ""
       let blockIndex = 0
@@ -366,14 +368,14 @@ export class RequestHandler {
       res.write("event: message_stop\n")
       res.write(`data: ${JSON.stringify(messageStopEvent)}\n\n`)
 
-      Logger.debug("Anthropic streaming response completed", {
+      Logger.debug("anthropic streaming response completed", {
         requestId,
         contentLength: content.length,
         toolCallsCount: anthropicToolCalls.length,
       })
 
     } catch (error) {
-      Logger.error("Anthropic streaming error", error as Error, { requestId })
+      Logger.error("anthropic streaming error", error as Error, { requestId })
       const errorEvent = {
         type: "error",
         error: {
@@ -396,7 +398,7 @@ export class RequestHandler {
     requestId: string
   ): Promise<void> {
     try {
-      Logger.debug("collecting Anthropic full response", { requestId })
+      Logger.debug("collecting anthropic full response", { requestId })
 
       let content = ""
       const toolCalls: vscode.LanguageModelToolCallPart[] = []
@@ -413,16 +415,17 @@ export class RequestHandler {
         }
       }
 
-      // convert tool calls to Anthropic format
+      // convert tool calls to anthropic format
       const anthropicToolCalls = this.convertVSCodeToolCallsToAnthropic(toolCalls)
 
-      const responseContent: AnthropicContent[] = []
+      const responseContent: AnthropicContentBlock[] = []
 
       // add text content if present
       if (content) {
         responseContent.push({
           type: "text",
           text: content,
+          citations: null,
         })
       }
 
@@ -441,16 +444,22 @@ export class RequestHandler {
         content: responseContent,
         model: request.model,
         stop_reason: stopReason as any,
+        stop_sequence: null,
         usage: {
           input_tokens: this.estimateTokens(request.messages),
           output_tokens: this.estimateTokens([{ role: "assistant", content: content }]),
+          cache_creation_input_tokens: null,
+          cache_read_input_tokens: null,
+          cache_creation: null,
+          server_tool_use: null,
+          service_tier: null,
         },
       }
 
       res.writeHead(HTTP_STATUS.OK, { "Content-Type": CONTENT_TYPES.JSON })
       res.end(JSON.stringify(messageResponse, null, 2))
 
-      Logger.debug("Anthropic response sent", {
+      Logger.debug("anthropic response sent", {
         requestId,
         contentLength: content.length,
         inputTokens: messageResponse.usage.input_tokens,
@@ -459,7 +468,7 @@ export class RequestHandler {
       })
 
     } catch (error) {
-      Logger.error("error collecting Anthropic response", error as Error, { requestId })
+      Logger.error("error collecting anthropic response", error as Error, { requestId })
       throw error
     }
   }
@@ -527,7 +536,8 @@ export class RequestHandler {
     res.writeHead(statusCode, { "Content-Type": CONTENT_TYPES.JSON })
     res.end(JSON.stringify(errorResponse, null, 2))
 
-    Logger.error(`error response: ${statusCode}`, new Error(message), { type, requestId })
+    const log = statusCode >= HTTP_STATUS.INTERNAL_SERVER_ERROR ? Logger.error : Logger.warn
+    log.apply(Logger, [`error response: ${statusCode}`, new Error(message), { type, requestId }])
   }
 
   private async readRequestBody(req: http.IncomingMessage): Promise<string> {
