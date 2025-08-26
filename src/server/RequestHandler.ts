@@ -1,6 +1,6 @@
 import * as http from "http"
 import * as vscode from "vscode"
-import { CONTENT_TYPES, ERROR_CODES, HTTP_STATUS, SSE_HEADERS } from "../constants"
+import { CONTENT_TYPES, ERROR_CODES, HTTP_STATUS, SSE_HEADERS, REQUEST_LIMITS } from "../constants"
 import {
   AnthropicContentBlock,
   AnthropicMessageRequest,
@@ -546,9 +546,8 @@ export class RequestHandler {
 
       req.on("data", chunk => {
         body += chunk
-
         // limit body size to 10mb
-        if (body.length > 10 * 1024 * 1024) {
+        if (body.length > REQUEST_LIMITS.MAX_BODY_SIZE) {
           reject(new Error("request body too large"))
           return
         }

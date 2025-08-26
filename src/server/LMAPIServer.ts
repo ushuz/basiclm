@@ -4,7 +4,7 @@ import { URL } from "url"
 import { Logger } from "../utils/Logger"
 import { RequestHandler } from "./RequestHandler"
 import { ServerConfig, ServerState } from "../types"
-import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS } from "../constants"
+import { DEFAULT_CONFIG, API_ENDPOINTS, HTTP_STATUS, CORS_HEADERS, SERVER_TIMEOUTS } from "../constants"
 
 export class LMAPIServer {
   private server?: http.Server
@@ -38,9 +38,9 @@ export class LMAPIServer {
         this.server = http.createServer(this.handleRequest.bind(this))
 
         // configure server settings
-        this.server.keepAliveTimeout = 65000
-        this.server.headersTimeout = 66000
-        this.server.requestTimeout = 120000
+        this.server.keepAliveTimeout = SERVER_TIMEOUTS.KEEP_ALIVE
+        this.server.headersTimeout = SERVER_TIMEOUTS.HEADERS
+        this.server.requestTimeout = SERVER_TIMEOUTS.REQUEST
 
         this.server.listen(serverPort, serverHost, () => {
           this.state.isRunning = true
@@ -99,7 +99,7 @@ export class LMAPIServer {
       setTimeout(() => {
         this.server?.closeAllConnections?.()
         resolve()
-      }, 5000)
+      }, SERVER_TIMEOUTS.SHUTDOWN)
     })
   }
 

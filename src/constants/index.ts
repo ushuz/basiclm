@@ -50,3 +50,14 @@ export const ERROR_CODES = {
   NOT_FOUND_ERROR: "not_found_error",
   API_ERROR: "api_error",
 } as const
+
+export const SERVER_TIMEOUTS = {
+  KEEP_ALIVE: 65000,
+  HEADERS: 66000,
+  REQUEST: 120000,
+  SHUTDOWN: 5000,
+} as const
+
+export const REQUEST_LIMITS = {
+  MAX_BODY_SIZE: 10 * 1024 * 1024, // 10MB
+} as const
