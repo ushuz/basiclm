@@ -561,13 +561,15 @@ export class RequestHandler {
 
   private estimateTokens(messages: any[]): number {
     // simple token estimation - roughly 4 characters per token
+    const CHARACTERS_PER_TOKEN = 4
     const text = messages.map(msg =>
-      typeof msg.content === "string" ? msg.content :
-        Array.isArray(msg.content) ? msg.content.map((c: any) => c.text || "").join("") :
-          ""
-    ).join("")
-
-    return Math.ceil(text.length / 4)
+      typeof msg.content === "string"
+        ? msg.content
+        : Array.isArray(msg.content)
+          ? msg.content.map((c: any) => c.text || "").join("\n")
+          : ""
+    ).join("\n")
+    return Math.ceil(text.length / CHARACTERS_PER_TOKEN)
   }
 
   public dispose(): void {
