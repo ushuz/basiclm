@@ -66,13 +66,10 @@ export class RequestHandler {
 
       try {
         const response = await model.sendRequest(vsCodeMessages, options, token)
-
-        if (request.stream) {
-          await this.handleAnthropicStreamingResponse(response, res, request, model, requestId)
-        } else {
-          await this.handleAnthropicNonStreamingResponse(response, res, request, model, requestId)
-        }
-
+        const handleAnthropicResponse = request.stream
+          ? this.handleAnthropicStreamingResponse
+          : this.handleAnthropicResponse
+        await handleAnthropicResponse(response, res, request, model, requestId)
       } catch (lmError) {
         Logger.error("VS Code LM API error", lmError as Error, { requestId })
 
@@ -391,7 +388,7 @@ export class RequestHandler {
     }
   }
 
-  private async handleAnthropicNonStreamingResponse(
+  private async handleAnthropicResponse(
     response: vscode.LanguageModelChatResponse,
     res: http.ServerResponse,
     request: AnthropicMessageRequest,
