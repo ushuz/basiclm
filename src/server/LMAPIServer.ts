@@ -204,7 +204,10 @@ export class LMAPIServer {
   }
 
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const RADIX = 36  // base 36: 0-9 and a-z (e.g., "0.abc123def")
+    const SLICE = 2   // skip "0." prefix from Math.random() output
+    const CHARS = 8   // take a fixed length of characters from Math.random() output
+    return `req_${Date.now().toString(RADIX).slice(SLICE)}${Math.random().toString(RADIX).slice(SLICE, SLICE + CHARS)}`
   }
 
   private loadConfig(): ServerConfig {
