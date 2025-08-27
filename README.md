@@ -73,6 +73,11 @@ curl -X POST http://127.0.0.1:8099/v1/messages \
   }'
 ```
 
+```bash
+# GitHub Copilot doesn't offer Claude Code's default small fast model "claude-3-5-haiku", override to "gpt-4o-mini" instead
+$ ANTHROPIC_BASE_URL=http://localhost:8099 ANTHROPIC_SMALL_FAST_MODEL=gpt-4o-mini claude
+```
+
 ## Development
 
 ```bash
