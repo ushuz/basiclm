@@ -144,7 +144,7 @@ export class LMAPIServer {
       }
 
       // route request
-      await this.routeRequest(url.pathname, method, req, res, requestId)
+      await this.routeRequest(url.pathname, req, res, requestId)
 
     } catch (error) {
       this.state.errorCount++
@@ -161,7 +161,6 @@ export class LMAPIServer {
 
   private async routeRequest(
     pathname: string,
-    method: string,
     req: http.IncomingMessage,
     res: http.ServerResponse,
     requestId: string
