@@ -96,7 +96,7 @@ function registerCommands(context: vscode.ExtensionContext) {
         startTime: state.startTime?.toISOString(),
         requestCount: state.requestCount,
         errorCount: state.errorCount,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       })
       
       updateStatusBar()
@@ -129,7 +129,7 @@ function registerCommands(context: vscode.ExtensionContext) {
         isRunning: false,
         requestCount: 0,
         errorCount: 0,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       })
       
       updateStatusBar()
@@ -155,7 +155,7 @@ function registerCommands(context: vscode.ExtensionContext) {
         startTime: state.startTime?.toISOString(),
         requestCount: state.requestCount,
         errorCount: state.errorCount,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       })
       
       updateStatusBar()
@@ -346,7 +346,7 @@ async function checkAndStartServer(): Promise<void> {
       startTime: new Date().toISOString(),
       requestCount: 0,
       errorCount: 0,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     })
   } else {
     // No server running, start our own
@@ -385,7 +385,7 @@ async function syncServerStatus(): Promise<void> {
           host: globalState.host,
           startTime: globalState.startTime ? new Date(globalState.startTime) : undefined,
           requestCount: globalState.requestCount,
-          errorCount: globalState.errorCount
+          errorCount: globalState.errorCount,
         })
       }
     } else {
@@ -397,7 +397,7 @@ async function syncServerStatus(): Promise<void> {
         host: undefined,
         startTime: undefined,
         requestCount: 0,
-        errorCount: 0
+        errorCount: 0,
       })
       
       // Clear global state
@@ -405,7 +405,7 @@ async function syncServerStatus(): Promise<void> {
         isRunning: false,
         requestCount: 0,
         errorCount: 0,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       })
     }
     
