@@ -42,6 +42,11 @@
         "command": "basiclm.status",
         "title": "Show Server Status",
         "category": "BasicLM"
+      },
+      {
+        "command": "basiclm.sync",
+        "title": "Sync with External Server",
+        "category": "BasicLM"
       }
     ],
     "configuration": {
