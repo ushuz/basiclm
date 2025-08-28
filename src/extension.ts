@@ -24,12 +24,12 @@ export function activate(context: vscode.ExtensionContext) {
   // register commands
   registerCommands(context)
 
-  // auto-start if configured, but check global state first
+  // auto-start if configured
   const config = vscode.workspace.getConfiguration("basiclm")
   if (config.get<boolean>("autoStart", DEFAULT_CONFIG.autoStart)) {
     checkLanguageModelAccess().then(hasAccess => {
       if (hasAccess) {
-        checkAndStartServer()
+        vscode.commands.executeCommand("basiclm.start")
       } else {
         Logger.warn("auto-start skipped: Language Model access not available")
       }
@@ -59,8 +59,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   const startCommand = vscode.commands.registerCommand("basiclm.start", async () => {
     try {
       // Check global state to see if another window has a server running
-      const globalServerState = getGlobalServerState()
-      if (globalServerState?.isRunning) {
+      if (isServerRunningGlobally()) {
         vscode.window.showWarningMessage("BasicLM is already running in another window")
         return
       }
@@ -142,16 +141,11 @@ function registerCommands(context: vscode.ExtensionContext) {
 
 function updateStatusBar() {
   const state = server.getState()
-  const globalState = getGlobalServerState()
 
   if (state.isRunning) {
     statusBarItem.text = `$(server) BasicLM :${state.port}`
     statusBarItem.tooltip = `BasicLM is running: http://${state.host}:${state.port}`
     statusBarItem.backgroundColor = undefined
-  } else if (globalState?.isRunning) {
-    statusBarItem.text = "$(server) BasicLM (external)"
-    statusBarItem.tooltip = "BasicLM is running in another window"
-    statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.prominentBackground")
   } else {
     statusBarItem.text = "$(server) BasicLM (stopped)"
     statusBarItem.tooltip = "BasicLM is stopped"
@@ -163,7 +157,6 @@ function updateStatusBar() {
 
 async function showServerStatus() {
   const state = server.getState()
-  const globalState = getGlobalServerState()
   let items, status
 
   if (state.isRunning) {
@@ -183,15 +176,6 @@ async function showServerStatus() {
       },
     ]
     status = `Running on http://${state.host}:${state.port} | Requests: ${state.requestCount}`
-  } else if (globalState?.isRunning) {
-    items = [
-      {
-        label: "Configure",
-        description: "Open VS Code settings for BasicLM",
-        action: "basiclm.configure",
-      },
-    ]
-    status = "Server running in another window"
   } else {
     const config = server.getConfig()
     items = [
@@ -236,23 +220,12 @@ function getServerStateKey(): string {
 }
 
 /**
- * Interface for global server state
+ * Check if server is running in any window via global state
  */
-interface GlobalServerState {
-  isRunning: boolean
-  port?: number
-  host?: string
-  lastUpdated: string
-}
-
-/**
- * Get global server state from extension global state
- */
-function getGlobalServerState(): GlobalServerState | undefined {
-  if (!extensionContext) return undefined
-  
+function isServerRunningGlobally(): boolean {
+  if (!extensionContext) return false
   const stateKey = getServerStateKey()
-  return extensionContext.globalState.get(stateKey)
+  return extensionContext.globalState.get(stateKey, false)
 }
 
 /**
@@ -260,32 +233,6 @@ function getGlobalServerState(): GlobalServerState | undefined {
  */
 async function updateGlobalServerState(isRunning: boolean): Promise<void> {
   if (!extensionContext) return
-  
-  const state = server.getState()
   const stateKey = getServerStateKey()
-  
-  const globalState: GlobalServerState = {
-    isRunning,
-    port: isRunning ? state.port : undefined,
-    host: isRunning ? state.host : undefined,
-    lastUpdated: new Date().toISOString(),
-  }
-  
-  await extensionContext.globalState.update(stateKey, globalState)
-}
-
-/**
- * Check if we should auto-start based on global state
- */
-async function checkAndStartServer(): Promise<void> {
-  const globalState = getGlobalServerState()
-  
-  if (globalState?.isRunning) {
-    // Another window is already running the server
-    Logger.info("Server is already running in another window")
-    updateStatusBar()
-  } else {
-    // No server running, start our own
-    await vscode.commands.executeCommand("basiclm.start")
-  }
+  await extensionContext.globalState.update(stateKey, isRunning)
 }
