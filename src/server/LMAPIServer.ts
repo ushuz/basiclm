@@ -120,12 +120,6 @@ export class LMAPIServer {
     return { ...this.config }
   }
 
-  public syncExternalState(externalState: ServerState): void {
-    // Update our internal state to match external server state
-    this.state = { ...externalState }
-    Logger.info("synced with external server state", { state: this.state })
-  }
-
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     const startTime = Date.now()
     const requestId = this.generateRequestId()
